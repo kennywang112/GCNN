@@ -1,0 +1,8 @@
+__pycache__
+.ipynb_checkpoints
+Image
+Image_data
+model
+output_data
+paper
+preprocess/output_data

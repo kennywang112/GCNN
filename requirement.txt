@@ -1,0 +1,4 @@
+mediapipe==0.10.7
+protobuf==3.19.6
+torch-geometric==2.6.1
+torchvision==0.20.0
