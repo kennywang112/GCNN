@@ -20,26 +20,34 @@ class Net_Alex(nn.Module):
         self.fc_layers = nn.Sequential(
             nn.Linear(hidden_channels + 4096, 64),  # Combine GCN and AlexNet embeddings
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.05),
             nn.Linear(64, 3)  # 3 classes
         )
-    
+
+        self.fc_only_alex = nn.Sequential(
+            nn.Linear(4096, 64),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(64, 3)
+        )
+        
     def forward(self, x, edge_index, edge_weight, batch, image_features):
-        # GCN component
-        x = self.conv1(x, edge_index, edge_weight=edge_weight)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index, edge_weight=edge_weight)
-        x = global_mean_pool(x, batch)
 
-        # CNN component (AlexNet)
-        image_features = self.alexnet(image_features)
-
-        # Combine graph and image features
-        x = torch.cat([x, image_features], dim=1)
-        x = self.fc_layers(x)
-        return x
-
-
+        if x is not None and edge_index is not None and edge_index.numel() > 0:
+            # GCN component
+            x = self.conv1(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv2(x, edge_index, edge_weight=edge_weight)
+            x = global_mean_pool(x, batch)
+            # Combine GCN and AlexNet features
+            x = torch.cat([x, self.alexnet(image_features)], dim=1)
+            return self.fc_layers(x)
+        
+        else:
+            # Only use AlexNet features
+            x = self.alexnet(image_features)
+            return self.fc_only_alex(x)
+        
 class KAN(torch.nn.Module):
     def __init__(self, hidden_channels, output_dim=3):
         super(KAN, self).__init__()
