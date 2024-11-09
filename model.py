@@ -21,14 +21,14 @@ class Net_Alex(nn.Module):
             nn.Linear(hidden_channels + 4096, 64),  # Combine GCN and AlexNet embeddings
             nn.ReLU(),
             nn.Dropout(0.05),
-            nn.Linear(64, 3)  # 3 classes
+            nn.Linear(64, 7)  # 3 classes
         )
 
         self.fc_only_alex = nn.Sequential(
             nn.Linear(4096, 64),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(64, 3)
+            nn.Linear(64, 7)
         )
         
     def forward(self, x, edge_index, edge_weight, batch, image_features):
