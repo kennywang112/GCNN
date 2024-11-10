@@ -1,19 +1,10 @@
+import os
 import torch
 import numpy as np
+from PIL import Image
+from torchvision import transforms
 from scipy.sparse import coo_matrix
 from torch_geometric.data import Data, Batch
-from torchvision import transforms
-from PIL import Image
-
-def process_files(directory, label, image_dir, data_dict, key):
-    for filename in os.listdir(directory):
-        if filename.endswith('.csv'):
-            file_path = os.path.join(directory, filename)
-            unique_id = filename.replace('adjacency_matrix_', '').replace('.csv', '')
-            image_path = os.path.join(image_dir, f'{key}/{unique_id}')
-            data = process_adj_matrix(file_path, image_path)
-            data.y = torch.tensor([label])
-            data_dict[key].append(data)
 
 def read_and_process_csv(file_path):
     # Placeholder function to read CSV and process into graph data
@@ -47,3 +38,40 @@ def custom_collate(data_list):
     batch = Batch.from_data_list(data_list)
     batch.image_features = torch.stack([data.image_features for data in data_list])  # Stack manually to keep shape
     return batch
+
+
+def process_files(directory, label, image_dir, data_dict, key):
+    
+    num_node_features = 21
+    
+    adjacency_files = set(f.replace('adjacency_matrix_', '').replace('.jpg.csv', '') for f in os.listdir(directory) if f.endswith('.csv'))
+    image_files = set(f.replace('.jpg', '') for f in os.listdir(os.path.join(image_dir, key)) if f.endswith('.jpg'))
+
+    # Image with no adj unique_id
+    missing_adj = image_files - adjacency_files
+    
+    for unique_id in image_files:
+        image_path = os.path.join(image_dir, key, f'{unique_id}.jpg')
+        file_path = os.path.join(directory, f'adjacency_matrix_{unique_id}.jpg.csv')
+
+        if unique_id in missing_adj:
+            # No adj, use CNN only
+            image_data = process_image(image_path)
+            
+            # for handling model error
+            placeholder_x = torch.zeros(1, num_node_features)
+            placeholder_index = torch.empty((2, 0), dtype=torch.long)
+            placeholder_weight = torch.empty((0,), dtype=torch.float)
+            
+            data = Data(x=placeholder_x, edge_index=placeholder_index, edge_weight=placeholder_weight, image_features=image_data)
+            data.y = torch.tensor([label])
+            data_dict[key].append(data)
+            
+        elif os.path.exists(file_path) and os.path.exists(image_path):
+            # Image with adjacency matrix
+            data = process_adj_matrix(file_path, image_path)
+            data.y = torch.tensor([label])
+            data_dict[key].append(data)
+            
+        else:
+            print(f"Unexpected missing file for {unique_id}")

@@ -1,10 +1,17 @@
-Data: https://www.kaggle.com/datasets/shuvoalok/raf-db-dataset <br/>
-GCNconv: https://arxiv.org/pdf/1609.02907
+
+Data: [RAF-DB](https://www.kaggle.com/datasets/shuvoalok/raf-db-dataset) <br/>
+GCN framework: [GCNconv](https://arxiv.org/pdf/1609.02907) <br/>
+Ref : [MRE-CNN](https://arxiv.org/pdf/1807.10575)
 
 ## How to run
 1. Install data from kaggle (Image_data)
 2. Run Adjacency.ipynb from preprocess to get matrix
 3. Run main.py or main_test.ipynb
+
+## Not
+Install torch with the command below to get a GPU version (if any)<br/>
+`pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/metal.html` <br/>
+
 
 ## Contributors & Collaborators
 
