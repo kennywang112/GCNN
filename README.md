@@ -20,5 +20,6 @@ Install torch with the command below to get a GPU version (if any)<br/>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hihisw"><img src="https://avatars.githubusercontent.com/u/91866927?v=4" width="100px;" alt="尹士文"/><br /><sub><b>尹士文</b></sub></a>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/cys0107"><img src="https://avatars.githubusercontent.com/u/91866945?v=4" width="100px;" alt="周宇舒"/><br /><sub><b>周雨舒</b></sub></a>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hsin6"><img src="https://avatars.githubusercontent.com/u/91867022?v=4" width="100px;" alt="張藝馨"/><br /><sub><b>張藝馨</b></sub></a>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/bunnnn1002"><img src="https://avatars.githubusercontent.com/u/91866935?v=4" width="100px;" alt="蕭邦宇"/><br /><sub><b>蕭邦宇</b></sub></a>
   </tbody>
 </table>
