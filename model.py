@@ -18,16 +18,22 @@ class Net_Alex(nn.Module):
         )
 
         self.fc_layers = nn.Sequential(
-            nn.Linear(hidden_channels + 4096, 64),  # Combine GCN and AlexNet embeddings
+            nn.Linear(hidden_channels + 4096, 256),  # Combine GCN and AlexNet embeddings
             nn.ReLU(),
-            nn.Dropout(0.05),
+            nn.Dropout(0.1),
+            nn.Linear(256,64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(64, 7)  # 3 classes
         )
 
         self.fc_only_alex = nn.Sequential(
-            nn.Linear(4096, 64),
+            nn.Linear(4096, 256),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.1),
+            nn.Linear(256,64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(64, 7)
         )
         
