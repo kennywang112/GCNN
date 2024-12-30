@@ -126,3 +126,25 @@ class Net(torch.nn.Module):
 
         x = self.fc_layers(x)
         return x
+
+class AlexNetModified(nn.Module):
+    def __init__(self, num_classes=7):
+        super(AlexNetModified, self).__init__()
+        self.alexnet = models.alexnet(pretrained=True)
+        # 替换分类器的最后一层
+        num_features = self.alexnet.classifier[6].in_features
+        self.alexnet.classifier[6] = nn.Linear(num_features, num_classes)
+
+    def forward(self, x):
+        return self.alexnet(x)
+
+class NetWrapper(nn.Module):
+    def __init__(self, model, edge_index, edge_weight, batch):
+        super(NetWrapper, self).__init__()
+        self.model = model
+        self.edge_index = edge_index
+        self.edge_weight = edge_weight
+        self.batch = batch
+
+    def forward(self, image_features):
+        return self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)

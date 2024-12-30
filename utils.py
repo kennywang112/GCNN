@@ -6,6 +6,9 @@ from torchvision import transforms
 from scipy.sparse import coo_matrix
 from torch_geometric.data import Data, Batch
 
+def count_valid_files(directory):
+    return sum(1 for filename in os.listdir(directory) if not filename.startswith('.') and os.path.isfile(os.path.join(directory, filename)))
+
 def read_and_process_csv(file_path):
     # Placeholder function to read CSV and process into graph data
     # This should return edge_index, edge_weight, and node features (x)
@@ -75,3 +78,5 @@ def process_files(directory, label, image_dir, data_dict, key):
             
         else:
             print(f"Unexpected missing file for {unique_id}")
+            
+    return data_dict
