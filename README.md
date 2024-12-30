@@ -1,13 +1,13 @@
 
 Data: [RAF-DB](https://www.kaggle.com/datasets/shuvoalok/raf-db-dataset) <br/>
 GCN framework: [GCNconv](https://arxiv.org/pdf/1609.02907) <br/>
-Ref : [MRE-CNN](https://arxiv.org/pdf/1807.10575)
-face_landmarker: [](https://huggingface.co/lithiumice/models_hub/blob/8a7b241f38e33d194a06f881a1211b3e7eda4edd/face_landmarker.task)
+Ref : [MRE-CNN](https://arxiv.org/pdf/1807.10575) <br/>
+Mediapipe model: [face_landmarker](https://huggingface.co/lithiumice/models_hub/blob/8a7b241f38e33d194a06f881a1211b3e7eda4edd/face_landmarker.task)
 ## How to run
 1. Install data from **kaggle** and put it in **Image_data** folder 
 2. Install **face_landmarker** and put it in **model** folder
-2. Run RunAdjacency.py to get image matrix
-3. Run RunModel.py for the model and Grad-Cam
+3. Run RunAdjacency.py to get image matrix
+4. Run RunModel.py for the model and Grad-Cam
 
 ### Finally you get a full folder structure below
 ```
