@@ -40,35 +40,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>第八組期末專題</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <script>
-        function toggleCamera() {
-            fetch('/toggle_camera', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    const button = document.getElementById('toggle-camera');
-                    button.textContent = data.camera_active ? 'Turn Off Camera' : 'Turn On Camera';
-                });
-        }
-
-        function toggleVisualization() {
-            fetch('/toggle_visualization', { method: 'POST' })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert('Visualization is now ' + (data.display_visualization ? 'ON' : 'OFF'));
-                    console.log('Visualization state:', data.display_visualization); // 調試輸出
-                })
-                .catch(error => {
-                    alert('Error toggling visualization: ' + error);
-                    console.error('Error:', error);
-                });
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../static/js/main.js"></script>
 </head>
 <body>
 
@@ -99,52 +72,60 @@
                 <h1>第八組期末專題</h1>
             </div><!-- /.hero-text -->
         </div><!-- /.hero-content -->
-    
+
         <!-- 包裹視頻流和概率顯示區域的容器 -->
         <div class="content-container" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
             <!-- 攝像頭視頻流及按鈕 -->
             <div class="video-container" style="display: flex; flex-direction: column; align-items: center;">
+                <ul class="nav navbar-nav navbar-right" style="display: flex; align-items: center; margin: 0; padding: 0;">
+                    <li class="dropdown" style="list-style: none; margin-right: 10px;">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" style="text-decoration: none; font-weight: bold;">
+                            Select Model<i class="fa fa-caret-down hidden-xs" aria-hidden="true" style="margin-left: 5px;"></i>
+                        </a>
+                        <ul class="dropdown-menu" role="menu" id="model-dropdown" style="text-align: left;">
+                            <li><a href="#" onclick="switchModel('alexnet_gnn')" id="alexnet-option">AlexNet + GNN</a></li>
+                            <li><a href="#" onclick="switchModel('vgg19_gnn')" id="vgg19-option">VGG19 + GNN</a></li>
+                        </ul>
+                    </li>
+                    <div id="current-model-display" style="margin-left: 20px; padding: 10px; background-color: #f1f1f1; border-radius: 5px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
+                        <p id="current-model-name" style="margin: 0; font-weight: bold; color: #333;">AlexNet + GNN</p>
+                    </div>
+                </ul>
                 <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Camera Stream">
                 <div class="button-group">
                     <button id="toggle-camera" onclick="toggleCamera()">Turn Off Camera</button>
                     <button id="toggle-visualization" onclick="toggleVisualization()">Toggle Visualization</button>
+                    <button id="generate-grad-cam" onclick="generateGradCam()">Generate Grad-CAM</button>
                 </div>
             </div>
-        
+
             <!-- 顯示類別概率 -->
-            <div id="probabilities">
-                <h3>Class Probabilities</h3>
-                <p>Loading probabilities...</p>
+            <div id="probabilities-container" style="display: flex; flex-direction: column; align-items: center;">
+                <div id="probabilities">
+                    <h3>Class Probabilities</h3>
+                    <table id="probabilities-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding: 3px;">Label</th>
+                                <th style="text-align: left; padding: 3px;">Probability</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JavaScript 會動態填充這裡 -->
+                        </tbody>
+                    </table>
+                </div>
+    
+                <!-- Grad-CAM 區域 -->
+                <div id="grad-cam-section" style="margin-top: 20px; text-align: center;">
+                    <h3>Grad-CAM</h3>
+                    <div id="grad-cam-placeholder">
+                        <img id="grad-cam-stream" src="/grad_cam_feed" alt="Grad-CAM Stream" onerror="this.style.display='none'">
+                    </div>
+                </div>
             </div>
         </div>
     </div><!-- /.hero -->
-
-    
-    <script>
-        function updateProbabilities() {
-            fetch('/get_probabilities')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.probabilities) {
-                        const probabilitiesDiv = document.getElementById('probabilities');
-                        let content = '<h3>Class Probabilities</h3><ul>';
-                        data.probabilities.forEach(item => {
-                            content += `<li>${item.label}: ${item.probability.toFixed(2)}%</li>`;
-                        });
-                        content += '</ul>';
-                        probabilitiesDiv.innerHTML = content;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching probabilities:', error);
-                });
-        }
-
-        // 在頁面加載後設置定時器，每2秒更新一次
-        window.onload = function() {
-            setInterval(updateProbabilities, 2000);
-        };
-    </script>
 
     <main id="main" class="site-main">
 
@@ -153,29 +134,8 @@
             <div class="container">
                 <h2>詳細數據資訊</h2>
                 <div class="row">
-                    <div class="col-sm-3 col-xs-6">
-                        <div class="counter-item">
-                            <p class="counter" data-to="377" data-speed="2000">0</p>
-                            <h3>Cofee Cups</h3>
-                        </div><!-- /.counter-item -->
-                    </div>
-                    <div class="col-sm-3 col-xs-6">
-                        <div class="counter-item">
-                            <p class="counter" data-to="1204" data-speed="2000">0</p>       
-                            <h3>Projects completed</h3>
-                        </div> <!-- /.counter-item -->      
-                    </div>
-                    <div class="col-sm-3 col-xs-6">
-                        <div class="counter-item">
-                            <p class="counter" data-to="459" data-speed="1000">0</p>
-                            <h3>Happy Clients</h3>
-                        </div><!-- /.counter-item -->
-                    </div>
-                    <div class="col-sm-3 col-xs-6">
-                        <div class="counter-item">
-                            <p class="counter" data-to="675" data-speed="1000">0</p>
-                            <h3>Average Deal</h3>
-                        </div><!-- /.counter-item -->
+                    <div style="width: 50%; margin: auto; padding: 20px;">
+                        <canvas id="dataChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -219,7 +179,6 @@
                         </div>
                     </div>
                 </div>
-        
                 <!-- 後四個項目 -->
                 <div class="portfolio-group">
                     <h3 class="group-title">Alexnet</h3>
@@ -252,9 +211,7 @@
                 </div>
             </div>
         </section>
-        
 
     </main><!-- /#main -->
-
 </body>
 </html>

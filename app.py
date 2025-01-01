@@ -1,17 +1,23 @@
-from flask import Flask, render_template, Response, jsonify, request
+from flask import Flask, Response, render_template, jsonify, send_file, make_response, request
+
+import io
 import cv2
 import time
 import numpy as np
+from PIL import Image
 import mediapipe as mp
-import torch
-import torchvision.transforms as transforms
-from models import Net_Alex
+from models import Net_Alex, NetWrapper
 from utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
+
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+
+import torch
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 
 app = Flask(__name__)
 
-# 初始化 MediaPipe 和 PyTorch 模型
 device = (
     "mps" 
     if torch.backends.mps.is_available() 
@@ -30,10 +36,18 @@ label_map = {
     6: "Neutral"
 }
 
-model = Net_Alex(hidden_channels=64, num_node_features=21)
-model.load_state_dict(torch.load('./model/trained_model.pth'))
-model.eval()
-model.to(device)
+model_alexnet_gnn = Net_Alex(hidden_channels=64, num_node_features=21)
+model_alexnet_gnn.load_state_dict(torch.load('./model/trained_model.pth'))
+model_alexnet_gnn.eval()
+model_alexnet_gnn.to(device)
+
+# Available models
+target_layers_map = {
+    "alexnet_gnn": model_alexnet_gnn,
+    "vgg19_gnn": model_alexnet_gnn
+}
+current_model_name = "alexnet_gnn"
+current_model = model_alexnet_gnn
 
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker
@@ -49,9 +63,15 @@ camera = cv2.VideoCapture(0)
 camera_active = True
 display_visualization = False  # 用於控制是否顯示視覺化
 latest_probabilities = None
+visualization_bgr = None
+
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
 def generate_frames():
-    global camera_active, display_visualization, latest_probabilities, latest_detection
+    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr
     print(f"Display Visualization: {display_visualization}") 
     last_detection_time = 0  # 初始化上一次檢測的時間
     detection_interval = 0.2   # 設定檢測間隔為 2 秒
@@ -97,12 +117,13 @@ def generate_frames():
                             x, edge_index, edge_weight, batch, image_tensor = process_for_model(
                                 face_roi, adjacency_matrix, node_features
                             )
+
                             with torch.no_grad():
-                                out = model(x, edge_index, edge_weight, batch, image_tensor)
+                                out = current_model(x, edge_index, edge_weight, batch, image_tensor)
                                 probabilities = F.softmax(out, dim=1)  # dim=1 表示按類別進行操作
                                 latest_probabilities = probabilities.squeeze().tolist()  # 更新全局變量
                                 pred = out.max(dim=1)[1].item()
-
+                                
                                 for idx, prob in enumerate(latest_probabilities):
                                     class_name = label_map[idx]
 
@@ -137,6 +158,19 @@ def generate_frames():
 def index():
     return render_template('index.html')
 
+@app.route('/switch_model', methods=['POST'])
+def switch_model():
+    global current_model, current_model_name
+    data = request.get_json()
+    selected_model = data.get('model')
+
+    if selected_model in target_layers_map:
+        current_model = target_layers_map[selected_model]
+        current_model_name = selected_model
+        return jsonify({'success': True, 'message': f'Model switched to {selected_model}'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid model selected'}), 400
+
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -164,6 +198,62 @@ def get_probabilities():
         for idx, prob in enumerate(latest_probabilities)
     ]
     return jsonify({'probabilities': probabilities_with_labels})
+
+@app.route('/generate_grad_cam', methods=['POST'])
+def generate_grad_cam():
+    global current_model, latest_detection, visualization_bgr
+
+    if latest_detection is None:
+        return jsonify({'error': 'No face detected'}), 400
+
+    try:
+        face_landmarks = latest_detection['face_landmarks']
+        x_min, y_min = latest_detection['x_min'], latest_detection['y_min']
+        x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
+
+        _, frame = camera.read()
+        face_roi = frame[y_min:y_max, x_min:x_max]
+
+        if face_roi.size == 0:
+            return jsonify({'error': 'Invalid face region'}), 400
+
+        adjacency_matrix, node_features = get_adjacency_matrix(face_landmarks)
+        x, edge_index, edge_weight, batch, image_tensor = process_for_model(
+            face_roi, adjacency_matrix, node_features
+        )
+
+        rgb_img = cv2.resize(face_roi, (224, 224)) / 255.0
+        rgb_img = rgb_img.astype(np.float32)
+        rgb_img_pil = Image.fromarray(cv2.cvtColor((rgb_img * 255).astype(np.uint8), cv2.COLOR_BGR2RGB))
+
+        input_tensor = transform(rgb_img_pil).unsqueeze(0).to(device)
+        
+        mean = torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1)
+        input_tensor = input_tensor * std + mean
+
+        wrapped_model = NetWrapper(current_model, edge_index, edge_weight, batch)
+        target_layers = [wrapped_model.model.alexnet.features[-1]]
+        cam = GradCAM(model=wrapped_model, target_layers=target_layers)
+        grayscale_cam = cam(input_tensor=input_tensor)
+
+        visualization = show_cam_on_image(rgb_img, grayscale_cam[0, :], use_rgb=True)
+        visualization_bgr = (visualization * 255).astype(np.uint8)
+
+        return jsonify({'message': 'Grad-CAM generated successfully'})
+    except Exception as e:
+        print(f"Error generating Grad-CAM: {e}")
+        return jsonify({'error': f'Failed to generate Grad-CAM: {str(e)}'}), 500
+
+@app.route('/grad_cam_feed')
+def grad_cam_feed():
+    global visualization_bgr
+    if visualization_bgr is None:
+        return "No Grad-CAM available", 404
+    _, buffer = cv2.imencode('.jpg', visualization_bgr)
+    response = make_response(buffer.tobytes())
+    response.headers['Content-Type'] = 'image/jpeg'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
