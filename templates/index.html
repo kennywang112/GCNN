@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <!-- Basic Page Needs
+    ================================================== -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Final project</title>
+
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="keywords" content="">
+
+    <!-- Mobile Specific Metas
+    ================================================== -->
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,300i,400,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
+
+    <!-- Favicon
+    ================================================== -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon.png') }}">
+
+    <!-- Stylesheets
+    ================================================== -->
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第八組期末專題</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        function toggleCamera() {
+            fetch('/toggle_camera', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    const button = document.getElementById('toggle-camera');
+                    button.textContent = data.camera_active ? 'Turn Off Camera' : 'Turn On Camera';
+                });
+        }
+
+        function toggleVisualization() {
+            fetch('/toggle_visualization', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Visualization is now ' + (data.display_visualization ? 'ON' : 'OFF'));
+                    console.log('Visualization state:', data.display_visualization); // 調試輸出
+                })
+                .catch(error => {
+                    alert('Error toggling visualization: ' + error);
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</head>
+<body>
+
+    <header id="masthead" class="site-header">
+        <nav id="primary-navigation" class="site-navigation">
+            <div class="container">
+
+                <div class="collapse navbar-collapse" id="agency-navbar-collapse">
+
+                    <ul class="nav navbar-nav navbar-right">
+
+                        <li class="active"><a href="index.html" data-toggle="dropdown">Home</a></li>
+                        <li><a href="#details-section">詳細數據</a></li>
+                        <li><a href="#grad-cam">Grad Cam</a></li>
+                        <li><a href="https://github.com/kennywang112/GCNN">Github</a></li>
+
+                    </ul>
+
+                </div>
+
+            </div>   
+        </nav><!-- /.site-navigation -->
+    </header><!-- /#mastheaed -->
+
+    <div id="hero" class="hero overlay">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>第八組期末專題</h1>
+            </div><!-- /.hero-text -->
+        </div><!-- /.hero-content -->
+    
+        <!-- 包裹視頻流和概率顯示區域的容器 -->
+        <div class="content-container" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
+            <!-- 攝像頭視頻流及按鈕 -->
+            <div class="video-container" style="display: flex; flex-direction: column; align-items: center;">
+                <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Camera Stream">
+                <div class="button-group">
+                    <button id="toggle-camera" onclick="toggleCamera()">Turn Off Camera</button>
+                    <button id="toggle-visualization" onclick="toggleVisualization()">Toggle Visualization</button>
+                </div>
+            </div>
+        
+            <!-- 顯示類別概率 -->
+            <div id="probabilities">
+                <h3>Class Probabilities</h3>
+                <p>Loading probabilities...</p>
+            </div>
+        </div>
+    </div><!-- /.hero -->
+
+    
+    <script>
+        function updateProbabilities() {
+            fetch('/get_probabilities')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.probabilities) {
+                        const probabilitiesDiv = document.getElementById('probabilities');
+                        let content = '<h3>Class Probabilities</h3><ul>';
+                        data.probabilities.forEach(item => {
+                            content += `<li>${item.label}: ${item.probability.toFixed(2)}%</li>`;
+                        });
+                        content += '</ul>';
+                        probabilitiesDiv.innerHTML = content;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching probabilities:', error);
+                });
+        }
+
+        // 在頁面加載後設置定時器，每2秒更新一次
+        window.onload = function() {
+            setInterval(updateProbabilities, 2000);
+        };
+    </script>
+
+    <main id="main" class="site-main">
+
+        <section id="details-section" class="site-section section-map-feature text-center">
+
+            <div class="container">
+                <h2>詳細數據資訊</h2>
+                <div class="row">
+                    <div class="col-sm-3 col-xs-6">
+                        <div class="counter-item">
+                            <p class="counter" data-to="377" data-speed="2000">0</p>
+                            <h3>Cofee Cups</h3>
+                        </div><!-- /.counter-item -->
+                    </div>
+                    <div class="col-sm-3 col-xs-6">
+                        <div class="counter-item">
+                            <p class="counter" data-to="1204" data-speed="2000">0</p>       
+                            <h3>Projects completed</h3>
+                        </div> <!-- /.counter-item -->      
+                    </div>
+                    <div class="col-sm-3 col-xs-6">
+                        <div class="counter-item">
+                            <p class="counter" data-to="459" data-speed="1000">0</p>
+                            <h3>Happy Clients</h3>
+                        </div><!-- /.counter-item -->
+                    </div>
+                    <div class="col-sm-3 col-xs-6">
+                        <div class="counter-item">
+                            <p class="counter" data-to="675" data-speed="1000">0</p>
+                            <h3>Average Deal</h3>
+                        </div><!-- /.counter-item -->
+                    </div>
+                </div>
+            </div>
+            
+        </section><!-- /.section-map-feature -->
+
+        <section id="grad-cam" class="site-section section-portfolio">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="heading-separator">Grad Cam</h2>
+                    <a href="https://openaccess.thecvf.com/content_ICCV_2017/papers/Selvaraju_Grad-CAM_Visual_Explanations_ICCV_2017_paper.pdf">Paper</a>
+                </div>
+        
+                <!-- 前四個項目 -->
+                <div class="portfolio-group">
+                    <h3 class="group-title">Alexnet+GNN</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/netalex_2.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/netalex_3.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/netalex_4.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- 後四個項目 -->
+                <div class="portfolio-group">
+                    <h3 class="group-title">Alexnet</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/alex_2.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/alex_3.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='grad/alex_4.png') }}" class="img-res" alt="">
+                                <h4 class="portfolio-item-title">Portfolio item</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+
+    </main><!-- /#main -->
+
+</body>
+</html>

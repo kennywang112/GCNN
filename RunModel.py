@@ -14,52 +14,22 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 from models import *
 from utils import *
 
-device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+device = (
+    "mps" 
+    if torch.backends.mps.is_available() 
+    else "cuda" 
+    if torch.cuda.is_available() 
+    else "cpu"
+)
 print(f'Using device: {device}')
 
-image_data_dir = './Image_data/DATASET/train'
-image_lengths = {subdir: count_valid_files(os.path.join(image_data_dir, subdir)) for subdir in os.listdir(image_data_dir) if not subdir.startswith('.') and os.path.isdir(os.path.join(image_data_dir, subdir))}
-
-adjacency_dir = './output_data/adjacency'
-adjacency_lengths = {subdir: count_valid_files(os.path.join(adjacency_dir, subdir)) for subdir in os.listdir(adjacency_dir) if not subdir.startswith('.') and os.path.isdir(os.path.join(adjacency_dir, subdir))}
-
-print("Image data lengths:")
-print(image_lengths)
-
-print("Adjacency data lengths:")
-print(adjacency_lengths)
-
-print("Process data...")
-# Set directory paths
-dir_1 = './output_data/adjacency/adjacency_1'
-dir_2 = './output_data/adjacency/adjacency_2'
-dir_3 = './output_data/adjacency/adjacency_3'
-dir_4 = './output_data/adjacency/adjacency_4'
-dir_5 = './output_data/adjacency/adjacency_5'
-dir_6 = './output_data/adjacency/adjacency_6'
-dir_7 = './output_data/adjacency/adjacency_7'
-
-image_dir = './Image_data/DATASET/train'
-
-dir_label_map = {
-    '1': (dir_1, 0),
-    '2': (dir_2, 1),
-    '3': (dir_3, 2),
-    '4': (dir_4, 3),
-    '5': (dir_5, 4),
-    '6': (dir_6, 5),
-    '7': (dir_7, 6),
-}
-
-data_dict = {str(i): [] for i in range(1, 8)}
 num_node_features = 21
 
-for key, (directory, label) in dir_label_map.items():
-    data_dict = process_files(directory, label, image_dir, data_dict, key)
+data_dict_path = './output_data/data_dict.pth'
+data_dict = torch.load(data_dict_path)
 
-print("Processed data")
+print("Processing data")
 print([len(data_dict[f'{i}']) for i in range(1, 8)])
-
 
 data_list = sum([data_dict[str(i)] for i in range(1, 8)], [])
 total_size = len(data_list)
@@ -81,7 +51,7 @@ model = Net_Alex(num_node_features, hidden_channels).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-num_epochs = 10
+num_epochs = 3
 
 # Initialize variables for cumulative predictions and labels
 cumulative_preds = []
@@ -157,9 +127,13 @@ for epoch in range(1, num_epochs + 1):
     # Accumulate all predictions and labels across epochs
     cumulative_preds.extend(epoch_preds)
     cumulative_labels.extend(epoch_labels)
-    
-print("Getting GradCAM...")
 
+# 保存模型
+save_path = './model/trained_model.pth'
+torch.save(model.state_dict(), save_path)
+print(f'Model saved to {save_path}')
+
+print("Getting GradCAM...")
 test_pth = [
     'Image_data/DATASET/test/1/test_0002_aligned.jpg',
     'Image_data/DATASET/test/2/test_0274_aligned.jpg',

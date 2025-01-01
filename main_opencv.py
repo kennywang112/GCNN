@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 import torchvision.transforms as transforms
 from scipy.spatial.distance import pdist, squareform
+from models import Net_Alex
 
 # 檢查是否支持 MPS
 device = (
@@ -19,7 +20,8 @@ device = (
 print(f"使用設備: {device}")
 
 # 載入預訓練模型
-model = torch.load('./1_25_70.pth')
+model = Net_Alex(hidden_channels=64, num_node_features=21)
+model.load_state_dict(torch.load('./model/trained_model.pth'))
 model.eval()
 model.to(device)
 
@@ -30,7 +32,7 @@ FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
 
 options = FaceLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path='./face_landmarker.task'),
+    base_options=BaseOptions(model_asset_path='./model/face_landmarker.task'),
     running_mode=VisionRunningMode.IMAGE)
 
 face_mesh_connections = mp.solutions.face_mesh.FACEMESH_TESSELATION
@@ -45,6 +47,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 
 def get_adjacency_matrix(landmarks):
     # 提取特徵點座標（只用於計算距離）
@@ -91,7 +94,36 @@ def process_for_model(face_roi, adjacency_matrix, node_features):
     
     return x, edge_index, edge_weight, batch, image_tensor
 
-# 創建FaceLandmarker對象
+def visualize_adjacency_matrix(image, adjacency_matrix, face_landmarks, w, h):
+    # 創建一個用於顯示鄰接矩陣的小視窗
+    matrix_size = 200
+    matrix_vis = np.zeros((matrix_size, matrix_size, 3), dtype=np.uint8)
+    
+    # 將鄰接矩陣歸一化並轉換為可視化圖像
+    adj_normalized = (adjacency_matrix - adjacency_matrix.min()) / (adjacency_matrix.max() - adjacency_matrix.min())
+    adj_resized = cv2.resize(adj_normalized, (matrix_size, matrix_size))
+    matrix_vis = (adj_resized * 255).astype(np.uint8)
+    matrix_vis = cv2.cvtColor(matrix_vis, cv2.COLOR_GRAY2BGR)
+    
+    # 在原始圖像上繪製特徵點之間的連接
+    for connection in face_mesh_connections:
+        point1, point2 = connection
+        if point1 < len(face_landmarks) and point2 < len(face_landmarks):
+            pt1 = (int(face_landmarks[point1].x * w), int(face_landmarks[point1].y * h))
+            pt2 = (int(face_landmarks[point2].x * w), int(face_landmarks[point2].y * h))
+            cv2.line(image, pt1, pt2, (0, 255, 0), 1)
+    
+    # 在原始圖像上繪製特徵點
+    for landmark in face_landmarks:
+        x, y = int(landmark.x * w), int(landmark.y * h)
+        cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+    
+    return matrix_vis
+
+# 在主循環之前添加顯示控制變量
+display_visualization = False
+
+# 修改主循環部分
 with FaceLandmarker.create_from_options(options) as landmarker:
     while True:
         success, image = cap.read()
@@ -137,7 +169,7 @@ with FaceLandmarker.create_from_options(options) as landmarker:
                     pred = out.max(dim=1)[1].item()
                 
                 # 顯示預測結果
-                label_map = {0: "1", 1: "2", 2: "3", 3: "4", 4: "5", 5: "6", 6: "7"}
+                label_map = {0: "Suprised", 1: "Fearful", 2: "Disgusted", 3: "Happy", 4: "Sad", 5: "Angry", 6: "Neutral"}
                 predicted_label = label_map[pred]
                 cv2.putText(image, f"Predicted: {predicted_label}", 
                            (x_min, y_min-10), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -145,10 +177,23 @@ with FaceLandmarker.create_from_options(options) as landmarker:
                 
                 # 繪製邊界框
                 cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                
+                # 只在display_visualization為True時顯示視覺化
+                if display_visualization:
+                    matrix_vis = visualize_adjacency_matrix(image, adjacency_matrix, face_landmarks, w, h)
+                    matrix_h, matrix_w = matrix_vis.shape[:2]
+                    image[0:matrix_h, 0:matrix_w] = matrix_vis
+        
+        # 添加顯示狀態文字
+        status_text = "Visualization: ON" if display_visualization else "Visualization: OFF"
+        cv2.putText(image, status_text, (10, h-20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
         cv2.imshow('Face Detection', image)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+        elif key == ord('v'):  # 使用'v'鍵切換視覺化顯示
+            display_visualization = not display_visualization
 
     cap.release()
     cv2.destroyAllWindows()
