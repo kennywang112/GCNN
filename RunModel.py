@@ -23,8 +23,6 @@ device = (
 )
 print(f'Using device: {device}')
 
-num_node_features = 21
-
 data_dict_path = './output_data/data_dict.pth'
 data_dict = torch.load(data_dict_path)
 
@@ -94,7 +92,7 @@ for epoch in range(1, num_epochs + 1):
     val_correct = 0
     epoch_preds = []
     epoch_labels = []
-    
+
     with torch.no_grad():
         
         for batch in val_loader:

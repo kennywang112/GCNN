@@ -64,6 +64,7 @@ camera_active = True
 display_visualization = False  # 用於控制是否顯示視覺化
 latest_probabilities = None
 visualization_bgr = None
+latest_detection = None
 
 transform = transforms.Compose([
     transforms.ToTensor(),

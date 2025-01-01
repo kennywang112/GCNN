@@ -54,6 +54,11 @@ class Net_Alex(nn.Module):
             x = self.alexnet(image_features)
             return self.fc_only_alex(x)
         
+    def extract_features(self, x, edge_index, edge_weight, batch, image_features):
+        # Only pass through AlexNet up to feature extraction
+        features = self.alexnet(image_features)
+        return features.view(features.size(0), -1)
+        
 class KAN(torch.nn.Module):
     def __init__(self, hidden_channels, output_dim=3):
         super(KAN, self).__init__()

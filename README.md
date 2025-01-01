@@ -5,12 +5,17 @@ Ref : [MRE-CNN](https://arxiv.org/pdf/1807.10575) <br/>
 Mediapipe model: [face_landmarker](https://huggingface.co/lithiumice/models_hub/blob/8a7b241f38e33d194a06f881a1211b3e7eda4edd/face_landmarker.task)
 Frontend template: [free css/html template](https://www.free-css.com/free-css-templates/page274/agency-perfect)
 ## How to run
-1. Install data from **kaggle** and put it in **Image_data** folder 
-2. Install **face_landmarker** and put it in **model** folder
-3. Run RunAdjacency.py to get image matrix
-4. Run RunModel.py for the model and Grad-Cam
+1. Download the dataset from **Kaggle** and place it in the **Image_data** folder.
+2. Install the **face_landmarker** tool and place it in the **model** folder.
+3. Execute `RunAdjacency.py` to generate the image adjacency matrix.
+4. Execute `Fileprocess.py` to preprocess the data for each category.
+5. Execute `RunModel.py` to train the model and generate Grad-CAM visualizations.
+6. Execute the `app.py` script to run the web application
 
-### Finally you get a full folder structure below
+## Other
+UMAP.py provides a lower-dimensional view of the model.
+
+### Finally you get the full necessary folder structure shown below
 ```
 path/GCNN
 ├─.ipynb_checkpoints
@@ -45,10 +50,10 @@ path/GCNN
 │  │  └─adjacency_7
 │  └─landmarks
 ```
+
 ## Note
 Install torch with the command below to get a GPU version (if any)<br/>
 `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/metal.html` <br/>
-
 
 ## Contributors & Collaborators
 
