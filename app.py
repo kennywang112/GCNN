@@ -182,9 +182,12 @@ def switch_model():
     if selected_model in target_layers_map:
         current_model = target_layers_map[selected_model]
         current_model_name = selected_model
+        print(f"Model switched to: {current_model_name}")
         return jsonify({'success': True, 'message': f'Model switched to {selected_model}'})
     else:
+        print(f"Invalid model selected: {selected_model}")
         return jsonify({'success': False, 'message': 'Invalid model selected'}), 400
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -206,14 +209,12 @@ def toggle_visualization():
 def get_probabilities():
     global latest_probabilities
     if latest_probabilities is None:
-        print("No probabilities available")
         return jsonify({'error': 'No probabilities available yet'}), 400
 
     probabilities_with_labels = [
         {"label": label_map[idx], "probability": prob * 100}
         for idx, prob in enumerate(latest_probabilities)
     ]
-    print("Returning probabilities:", probabilities_with_labels)
     return jsonify({'probabilities': probabilities_with_labels})
 
 

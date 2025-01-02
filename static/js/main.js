@@ -99,8 +99,8 @@ function updateCurrentModelDisplay() {
     const modelDisplay = document.getElementById('current-model-name');
     if (currentModel === 'alexnet_gnn') {
         modelDisplay.textContent = "AlexNet + GNN";
-    } else if (currentModel === 'vgg19_gnn') {
-        modelDisplay.textContent = "VGG19 + GNN";
+    } else if (currentModel === 'resnet18_gnn') {
+        modelDisplay.textContent = "ResNet18 + GNN";
     }
 }
 
