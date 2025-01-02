@@ -59,7 +59,6 @@
             fetchAndPlotValLoss();
             fetchAndPlotParallelCoordinates();
             // const button = document.getElementById('toggle-camera');
-            // button.textContent = 'Turn On Camera'; // 默認顯示「開啟攝像頭」
         };
     </script>
 </head>
@@ -112,7 +111,7 @@
                 </ul>
                 <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Camera Stream">
                 <div class="button-group">
-                    <button id="toggle-camera" onclick="toggleCamera()">Turn Off Camera</button>
+                    <button id="toggle-camera" onclick="toggleCamera()">Turn On Camera</button>
                     <button id="toggle-visualization" onclick="toggleVisualization()">Toggle Visualization</button>
                     <button id="generate-grad-cam" onclick="generateGradCam()">Generate Grad-CAM</button>
                 </div>

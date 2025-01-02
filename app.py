@@ -68,11 +68,12 @@ options = FaceLandmarkerOptions(
 camera = cv2.VideoCapture(0)
 print(f"Camera Opened: {camera.isOpened()}")
 
-if not camera.isOpened():
-    print("Warning: Camera not available. The application will still run.")
-    camera_active = False
-else:
-    camera_active = True
+# if not camera.isOpened():
+#     print("Warning: Camera not available. The application will still run.")
+#     camera_active = False
+# else:
+#     camera_active = True
+camera_active = False
 
 display_visualization = False  # 用於控制是否顯示視覺化
 latest_probabilities = None
