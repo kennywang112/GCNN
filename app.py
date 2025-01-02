@@ -1,6 +1,5 @@
 from flask import Flask, Response, render_template, jsonify, send_file, make_response, request
 
-import io
 import cv2
 import time
 import numpy as np
