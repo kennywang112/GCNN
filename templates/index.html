@@ -41,10 +41,11 @@
     <title>第八組期末專題</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <script src="../static/js/main.js"></script>
+    <script src="../static/js/plots.js"></script>
 </head>
 <body>
-
     <header id="masthead" class="site-header">
         <nav id="primary-navigation" class="site-navigation">
             <div class="container">
@@ -130,17 +131,30 @@
     <main id="main" class="site-main">
 
         <section id="details-section" class="site-section section-map-feature text-center">
-
             <div class="container">
                 <h2>詳細數據資訊</h2>
-                <div class="row">
-                    <div style="width: 50%; margin: auto; padding: 20px;">
+                <div class="row1">
+                    <div class="chart-block">
                         <canvas id="dataChart"></canvas>
+                    </div>
+                    <div class="chart-block">
+                        <canvas id="trainAccuracyChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-block">
+                        <canvas id="trainLossChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-block">
+                        <canvas id="valCorrectChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-block">
+                        <canvas id="valLossChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-block">
+                        <canvas id="parallelCoordinatesContainer" width="400" height="200"></canvas>
                     </div>
                 </div>
             </div>
-            
-        </section><!-- /.section-map-feature -->
+        </section>
 
         <section id="grad-cam" class="site-section section-portfolio">
             <div class="container">
@@ -155,26 +169,30 @@
                     <div class="row">
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='grad/netalex_1.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_2.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_3.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_4.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Happy</p>
                             </div>
                         </div>
                     </div>
@@ -187,29 +205,35 @@
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_2.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_3.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_4.png') }}" class="img-res" alt="">
                                 <h4 class="portfolio-item-title">Portfolio item</h4>
+                                <p>Happy</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            
         </section>
 
     </main><!-- /#main -->

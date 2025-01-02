@@ -14,8 +14,8 @@ from torch_geometric.loader import DataLoader as GeoDataLoader
 import mlflow
 
 from utils.utils_train_model import *
-from models import *
 from utils.utils_preprocess import *
+from models import *
 
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
 

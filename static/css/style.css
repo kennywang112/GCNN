@@ -32,6 +32,56 @@
 *
 */
 
+.container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.row1 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px; 
+}
+
+.chart-block {
+    flex: 1 1 calc(50% - 50px);
+    box-sizing: border-box; 
+    padding: 10px;
+}
+
+canvas {
+    max-width: 100%; /* 圖寬度不超出容器 */
+    height: auto; /* 自適應 */
+}
+
+/* Title styling */
+h2 {
+    font-size: 24px; 
+    margin-bottom: 20px; /* 增加標題與內容間隔*/
+}
+
+@media (max-width: 768px) {
+    .chart-block {
+        flex: 1 1 calc(50% - 20px); 
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 480px) {
+    .chart-block {
+        flex: 1 1 100%; 
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+}
+
 
 /* CUSTOM RESETS
 ================================================== */

@@ -279,3 +279,14 @@ class ResNet18_Only(nn.Module):
         # 經過自定義的線性層做最終分類
         out = self.fc(features)    # [N, num_classes]
         return out
+
+class NetWrapper(nn.Module):
+    def __init__(self, model, edge_index, edge_weight, batch):
+        super(NetWrapper, self).__init__()
+        self.model = model
+        self.edge_index = edge_index
+        self.edge_weight = edge_weight
+        self.batch = batch
+
+    def forward(self, image_features):
+        return self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)

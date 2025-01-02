@@ -102,61 +102,12 @@ function updateCurrentModelDisplay() {
     }
 }
 
-const categories = ['Surprised', 'Fearful', 'Disgust', 'Happy', 'Sad', 'Angry', 'Neutral'];
-const imageCounts = [1290, 281, 717, 4772, 1982, 705, 2524];
-const adjacencyCounts = [1165, 241, 256, 1915, 664, 524, 2127];
-
 // Set intervals for refreshing data
-window.onload = function () {
+window.onload = async function () {
     updateCurrentModelDisplay();
-    setInterval(refreshGradCam, 1000);
-    setInterval(updateProbabilities, 2000);
+    // setInterval(refreshGradCam, 1000);
+    // setInterval(updateProbabilities, 2000);
 
-    const ctx = document.getElementById('dataChart').getContext('2d');
-    const dataChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: categories.map(cat => `${cat}`),
-            datasets: [
-                {
-                    label: 'Image Count',
-                    data: imageCounts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Adjacency Count',
-                    data: adjacencyCounts,
-                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Category'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Count'
-                    }
-                }
-            }
-        }
-    });
-
+    const button = document.getElementById('toggle-camera');
+    button.textContent = 'Turn On Camera'; // 默認顯示「開啟攝像頭」
 };
