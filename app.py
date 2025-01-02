@@ -42,7 +42,7 @@ model_alexnet_gnn.eval()
 model_alexnet_gnn.to(device)
 
 model_resnet_gnn = Net_ResNet18(hidden_channels=64, num_node_features=21)
-model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Restnet.pth', map_location=torch.device(device)))
+model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Resnet.pth', map_location=torch.device(device)))
 model_resnet_gnn.eval()
 model_resnet_gnn.to(device)
 
