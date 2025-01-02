@@ -1,5 +1,6 @@
 from flask import Flask, Response, render_template, jsonify, send_file, make_response, request
 
+import os
 import cv2
 import time
 import numpy as np
@@ -343,4 +344,5 @@ def get_model_performance():
     return jsonify(df.to_dict(orient='records'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
