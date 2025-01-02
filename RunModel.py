@@ -162,3 +162,6 @@ for i, (model_name, model) in enumerate(model_dict.items()):
     save_path = f'./model/{model_name}.pth'
     torch.save(model.state_dict(), save_path)
     print(f'Model saved to {save_path}')
+
+    del model
+    torch.cuda.empty_cache()
