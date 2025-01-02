@@ -253,7 +253,12 @@ def generate_grad_cam():
         input_tensor = input_tensor * std + mean
 
         wrapped_model = NetWrapper(current_model, edge_index, edge_weight, batch)
-        target_layers = [wrapped_model.model.alexnet.features[-1]]
+        print(current_model_name)
+        if current_model_name == 'alexnet_gnn':
+            target_layers = [wrapped_model.model.alexnet.features[-1]]
+        else:
+            target_layers = [wrapped_model.model.resnet.layer4[-1]]
+
         cam = GradCAM(model=wrapped_model, target_layers=target_layers)
         grayscale_cam = cam(input_tensor=input_tensor)
 

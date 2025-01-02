@@ -48,6 +48,7 @@
     <script>
         window.onload = function () {
             console.log("Page loaded, starting intervals...");
+            const cameraButton = document.getElementById('toggle-camera');
             updateCurrentModelDisplay();
             setInterval(refreshGradCam, 1000);
             setInterval(updateProbabilities, 1000);
