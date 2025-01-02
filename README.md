@@ -2,7 +2,7 @@
 Data: [RAF-DB](https://www.kaggle.com/datasets/shuvoalok/raf-db-dataset) <br/>
 GCN framework: [GCNconv](https://arxiv.org/pdf/1609.02907) <br/>
 Ref : [MRE-CNN](https://arxiv.org/pdf/1807.10575) <br/>
-Mediapipe model: [face_landmarker](https://huggingface.co/lithiumice/models_hub/blob/8a7b241f38e33d194a06f881a1211b3e7eda4edd/face_landmarker.task)
+Mediapipe model: [face_landmarker](https://huggingface.co/lithiumice/models_hub/blob/8a7b241f38e33d194a06f881a1211b3e7eda4edd/face_landmarker.task) <br/>
 Frontend template: [free css/html template](https://www.free-css.com/free-css-templates/page274/agency-perfect)
 ## How to run
 1. Download the dataset from **Kaggle** and place it in the **Image_data** folder.

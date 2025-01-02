@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+import matplotlib.patches as mpatches
 import umap.umap_ as umap
 
 from torch.utils.data import random_split
@@ -10,6 +11,16 @@ from torch_geometric.loader import DataLoader as GeoDataLoader
 
 from models import *
 from utils import *
+
+label_map = {
+    0: "Surprised",
+    1: "Fearful",
+    2: "Disgusted",
+    3: "Happy",
+    4: "Sad",
+    5: "Angry",
+    6: "Neutral"
+}
 
 device = (
     "mps" 
@@ -38,7 +49,7 @@ val_loader = GeoDataLoader(val_data, batch_size=batch_size, shuffle=False)
 num_node_features = next(data.x.shape[1] for data in data_list if data.x is not None)
 hidden_channels = 64
 model = Net_Alex(num_node_features, hidden_channels).to(device)
-model.load_state_dict(torch.load('./model/trained_model.pth'))  # Load trained model
+model.load_state_dict(torch.load('./model/trained_model.pth'))
 model.eval()
 
 # Extract embeddings
@@ -55,8 +66,9 @@ with torch.no_grad():
         image_features = batch.image_features
         batch_y = batch.y
 
-        # Extract embeddings
+        # 將節點特徵、邊信息、圖像特徵輸入到模型中
         embeddings = model.extract_features(x, edge_index, edge_weight, batch.batch, image_features)
+        # 每個批次提取的嵌入特徵
         features_list.append(embeddings.cpu().numpy())
         labels_list.extend(batch_y.cpu().numpy())
 
@@ -71,16 +83,42 @@ low_dim_embeddings = reducer.fit_transform(features)
 
 # Visualization
 print("Visualizing data...")
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(12, 10))
+
+# Create scatter plot
 scatter = plt.scatter(
     low_dim_embeddings[:, 0], 
     low_dim_embeddings[:, 1], 
     c=labels, 
     cmap='tab10', 
-    s=10
+    s=40, 
+    edgecolor='k', 
+    alpha=0.8
 )
-plt.colorbar(scatter, label='Class')
-plt.title('UMAP Visualization of Feature Space')
-plt.xlabel('Dimension 1')
-plt.ylabel('Dimension 2')
-plt.show()
+
+# Create a legend instead of a colorbar
+unique_labels = np.unique(labels)
+handles = [
+    mpatches.Patch(color=scatter.cmap(scatter.norm(label)), label=label_map[label]) 
+    for label in unique_labels
+]
+plt.legend(
+    handles=handles, 
+    title="Emotion Categories", 
+    loc='upper right', 
+    fontsize=10, 
+    title_fontsize=12
+)
+
+# Add titles and labels
+plt.xlabel('Dimension 1', fontsize=14)
+plt.ylabel('Dimension 2', fontsize=14)
+
+# Customize grid and background
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.gca().set_facecolor('#f7f7f7')
+
+# Save the plot
+output_dir = './UMAPplots'
+os.makedirs(output_dir, exist_ok=True)
+plt.savefig(f'{output_dir}/umap_alex_gnn.png', dpi=300, bbox_inches='tight')
