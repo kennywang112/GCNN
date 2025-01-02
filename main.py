@@ -8,8 +8,8 @@ from sklearn.metrics import confusion_matrix
 from torch_geometric.data import Data, DataLoader
 from torch_geometric.loader import DataLoader as GeoDataLoader
 
-from model import *
-from utils import *
+from models import *
+from utils.utils_preprocess import *
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print(device)

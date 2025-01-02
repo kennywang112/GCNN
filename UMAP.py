@@ -10,7 +10,7 @@ from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader as GeoDataLoader
 
 from models import *
-from utils import *
+from utils.utils_preprocess import *
 
 label_map = {
     0: "Surprised",

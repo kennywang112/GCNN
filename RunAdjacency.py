@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import mediapipe as mp
 
-from getfacefeature import paths, verify_file_pairing
+from utils.getfacefeature import paths, verify_file_pairing
 
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker

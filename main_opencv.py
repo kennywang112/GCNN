@@ -1,12 +1,14 @@
 import cv2
 import numpy as np
+import pandas as pd
 import mediapipe as mp
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
-import pandas as pd
+
 import torch
 import torchvision.transforms as transforms
 from scipy.spatial.distance import pdist, squareform
+
 from models import Net_Alex
 
 # 檢查是否支持 MPS

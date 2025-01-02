@@ -2,7 +2,7 @@ import os
 import torch
 
 from models import *
-from utils import *
+from utils.utils_preprocess import *
 
 device = (
     "mps" 

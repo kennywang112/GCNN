@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 import mediapipe as mp
 from models import Net_Alex, NetWrapper
-from utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
+from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
