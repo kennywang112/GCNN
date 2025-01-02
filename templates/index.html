@@ -44,6 +44,24 @@
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <script src="../static/js/main.js"></script>
     <script src="../static/js/plots.js"></script>
+
+    <script>
+        window.onload = function () {
+            console.log("Page loaded, starting intervals...");
+            updateCurrentModelDisplay();
+            setInterval(refreshGradCam, 1000);
+            setInterval(updateProbabilities, 1000);
+
+            drawCategoryBarChart();
+            fetchAndPlotTrainAccuracy();
+            fetchAndPlotTrainLoss();
+            fetchAndPlotValCorrect();
+            fetchAndPlotValLoss();
+            fetchAndPlotParallelCoordinates();
+            // const button = document.getElementById('toggle-camera');
+            // button.textContent = 'Turn On Camera'; // 默認顯示「開啟攝像頭」
+        };
+    </script>
 </head>
 <body>
     <header id="masthead" class="site-header">
@@ -232,7 +250,6 @@
                     </div>
                 </div>
             </div>
-
             
         </section>
 

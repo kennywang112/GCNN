@@ -43,7 +43,9 @@ function refreshGradCam() {
 // Update probabilities
 function updateProbabilities() {
     fetch('/get_probabilities')
-        .then(response => response.json())
+        .then(response => {
+            return response.json();
+        })
         .then(data => {
             if (data.probabilities) {
                 const tableBody = document.getElementById('probabilities-table').querySelector('tbody');
@@ -83,11 +85,11 @@ function switchModel(model) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message); // 显示模型切换成功的消息
-            currentModel = model; // 更新当前模型
-            updateCurrentModelDisplay(); // 更新显示
+            alert(data.message); 
+            currentModel = model;
+            updateCurrentModelDisplay(); 
         } else {
-            alert(data.message); // 显示错误消息
+            alert(data.message);
         }
     })
     .catch(error => console.error('Error switching model:', error));
@@ -102,12 +104,3 @@ function updateCurrentModelDisplay() {
     }
 }
 
-// Set intervals for refreshing data
-window.onload = async function () {
-    updateCurrentModelDisplay();
-    // setInterval(refreshGradCam, 1000);
-    // setInterval(updateProbabilities, 2000);
-
-    const button = document.getElementById('toggle-camera');
-    button.textContent = 'Turn On Camera'; // 默認顯示「開啟攝像頭」
-};

@@ -291,12 +291,3 @@ function fetchAndPlotParallelCoordinates() {
             alert('Failed to load data: ' + error.message);
         });
 }
-
-window.onload = function () {
-    drawCategoryBarChart();
-    fetchAndPlotTrainAccuracy();
-    fetchAndPlotTrainLoss();
-    fetchAndPlotValCorrect();
-    fetchAndPlotValLoss();
-    fetchAndPlotParallelCoordinates();
-};

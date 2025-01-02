@@ -76,49 +76,50 @@ with torch.no_grad():
 features = np.vstack(features_list)
 labels = np.array(labels_list)
 
-# Dimensionality reduction with UMAP
-print("Performing UMAP dimensionality reduction...")
-reducer = umap.UMAP()
-low_dim_embeddings = reducer.fit_transform(features)
+print(features.shape)
+# # Dimensionality reduction with UMAP
+# print("Performing UMAP dimensionality reduction...")
+# reducer = umap.UMAP()
+# low_dim_embeddings = reducer.fit_transform(features)
 
-# Visualization
-print("Visualizing data...")
-plt.figure(figsize=(12, 10))
+# # Visualization
+# print("Visualizing data...")
+# plt.figure(figsize=(12, 10))
 
-# Create scatter plot
-scatter = plt.scatter(
-    low_dim_embeddings[:, 0], 
-    low_dim_embeddings[:, 1], 
-    c=labels, 
-    cmap='tab10', 
-    s=40, 
-    edgecolor='k', 
-    alpha=0.8
-)
+# # Create scatter plot
+# scatter = plt.scatter(
+#     low_dim_embeddings[:, 0], 
+#     low_dim_embeddings[:, 1], 
+#     c=labels, 
+#     cmap='tab10', 
+#     s=40, 
+#     edgecolor='k', 
+#     alpha=0.8
+# )
 
-# Create a legend instead of a colorbar
-unique_labels = np.unique(labels)
-handles = [
-    mpatches.Patch(color=scatter.cmap(scatter.norm(label)), label=label_map[label]) 
-    for label in unique_labels
-]
-plt.legend(
-    handles=handles, 
-    title="Emotion Categories", 
-    loc='upper right', 
-    fontsize=10, 
-    title_fontsize=12
-)
+# # Create a legend instead of a colorbar
+# unique_labels = np.unique(labels)
+# handles = [
+#     mpatches.Patch(color=scatter.cmap(scatter.norm(label)), label=label_map[label]) 
+#     for label in unique_labels
+# ]
+# plt.legend(
+#     handles=handles, 
+#     title="Emotion Categories", 
+#     loc='upper right', 
+#     fontsize=10, 
+#     title_fontsize=12
+# )
 
-# Add titles and labels
-plt.xlabel('Dimension 1', fontsize=14)
-plt.ylabel('Dimension 2', fontsize=14)
+# # Add titles and labels
+# plt.xlabel('Dimension 1', fontsize=14)
+# plt.ylabel('Dimension 2', fontsize=14)
 
-# Customize grid and background
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.gca().set_facecolor('#f7f7f7')
+# # Customize grid and background
+# plt.grid(True, linestyle='--', alpha=0.6)
+# plt.gca().set_facecolor('#f7f7f7')
 
-# Save the plot
-output_dir = './UMAPplots'
-os.makedirs(output_dir, exist_ok=True)
-plt.savefig(f'{output_dir}/umap_alex_gnn.png', dpi=300, bbox_inches='tight')
+# # Save the plot
+# output_dir = './UMAPplots'
+# os.makedirs(output_dir, exist_ok=True)
+# plt.savefig(f'{output_dir}/umap_alex_gnn.png', dpi=300, bbox_inches='tight')

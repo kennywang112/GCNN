@@ -289,4 +289,6 @@ class NetWrapper(nn.Module):
         self.batch = batch
 
     def forward(self, image_features):
-        return self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)
+        _, only_alex_output = self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)
+        return only_alex_output
+        # return self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)
