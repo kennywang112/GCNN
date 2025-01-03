@@ -65,9 +65,6 @@ options = FaceLandmarkerOptions(
     running_mode=VisionRunningMode.IMAGE
 )
 
-camera = cv2.VideoCapture(0)
-print(f"Camera Opened: {camera.isOpened()}")
-
 # if not camera.isOpened():
 #     print("Warning: Camera not available. The application will still run.")
 #     camera_active = False
@@ -79,6 +76,7 @@ display_visualization = False  # 用於控制是否顯示視覺化
 latest_probabilities = None
 visualization_bgr = None
 latest_detection = None
+camera = None
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -86,7 +84,7 @@ transform = transforms.Compose([
 ])
 
 def generate_frames():
-    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr
+    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr, camera
     print(f"Display Visualization: {display_visualization}") 
     last_detection_time = 0  # 初始化上一次檢測的時間
     detection_interval = 0.2   # 設定檢測間隔為 2 秒
@@ -196,7 +194,8 @@ def video_feed():
 
 @app.route('/toggle_camera', methods=['POST'])
 def toggle_camera():
-    global camera_active
+    global camera_active, camera
+    camera = cv2.VideoCapture(0)
     camera_active = not camera_active
     return jsonify({'camera_active': camera_active})
 
