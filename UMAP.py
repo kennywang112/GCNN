@@ -48,78 +48,90 @@ val_loader = GeoDataLoader(val_data, batch_size=batch_size, shuffle=False)
 # Model setup
 num_node_features = next(data.x.shape[1] for data in data_list if data.x is not None)
 hidden_channels = 64
-model = Net_Alex(num_node_features, hidden_channels).to(device)
-model.load_state_dict(torch.load('./model/trained_model.pth'))
-model.eval()
+
+
+model_alexnet_gnn = Net_Alex(hidden_channels=64, num_node_features=21)
+model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
+model_alexnet_gnn.eval()
+model_alexnet_gnn.to(device)
+
+model_resnet_gnn = Net_ResNet18(hidden_channels=64, num_node_features=21)
+model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Resnet.pth', map_location=torch.device(device)))
+model_resnet_gnn.eval()
+model_resnet_gnn.to(device)
+
+models = [model_alexnet_gnn, model_resnet_gnn]
 
 # Extract embeddings
 print("Extracting embeddings...")
-features_list = []
-labels_list = []
 
-with torch.no_grad():
-    for batch in train_loader:
-        batch = batch.to(device)
-        x = batch.x
-        edge_index = batch.edge_index
-        edge_weight = batch.edge_weight
-        image_features = batch.image_features
-        batch_y = batch.y
+for model in models:
+    print(model.__class__.__name__)
+    features_list = []
+    labels_list = []
 
-        # 將節點特徵、邊信息、圖像特徵輸入到模型中
-        embeddings = model.extract_features(x, edge_index, edge_weight, batch.batch, image_features)
-        # 每個批次提取的嵌入特徵
-        features_list.append(embeddings.cpu().numpy())
-        labels_list.extend(batch_y.cpu().numpy())
+    with torch.no_grad():
+        for batch in train_loader:
+            batch = batch.to(device)
+            x = batch.x
+            edge_index = batch.edge_index
+            edge_weight = batch.edge_weight
+            image_features = batch.image_features
+            batch_y = batch.y
 
-# Combine features and labels
-features = np.vstack(features_list)
-labels = np.array(labels_list)
+            # 將節點特徵、邊信息、圖像特徵輸入到模型中
+            embeddings = model.extract_features(x, edge_index, edge_weight, batch.batch, image_features)
+            # 每個批次提取的嵌入特徵
+            features_list.append(embeddings.cpu().numpy())
+            labels_list.extend(batch_y.cpu().numpy())
 
-print(features.shape)
-# # Dimensionality reduction with UMAP
-# print("Performing UMAP dimensionality reduction...")
-# reducer = umap.UMAP()
-# low_dim_embeddings = reducer.fit_transform(features)
+    # Combine features and labels
+    features = np.vstack(features_list)
+    labels = np.array(labels_list)
 
-# # Visualization
-# print("Visualizing data...")
-# plt.figure(figsize=(12, 10))
+    # Dimensionality reduction with UMAP
+    print("Performing UMAP dimensionality reduction...")
+    reducer = umap.UMAP()
+    low_dim_embeddings = reducer.fit_transform(features)
 
-# # Create scatter plot
-# scatter = plt.scatter(
-#     low_dim_embeddings[:, 0], 
-#     low_dim_embeddings[:, 1], 
-#     c=labels, 
-#     cmap='tab10', 
-#     s=40, 
-#     edgecolor='k', 
-#     alpha=0.8
-# )
+    # Visualization
+    print("Visualizing data...")
+    plt.figure(figsize=(12, 10))
 
-# # Create a legend instead of a colorbar
-# unique_labels = np.unique(labels)
-# handles = [
-#     mpatches.Patch(color=scatter.cmap(scatter.norm(label)), label=label_map[label]) 
-#     for label in unique_labels
-# ]
-# plt.legend(
-#     handles=handles, 
-#     title="Emotion Categories", 
-#     loc='upper right', 
-#     fontsize=10, 
-#     title_fontsize=12
-# )
+    # Create scatter plot
+    scatter = plt.scatter(
+        low_dim_embeddings[:, 0], 
+        low_dim_embeddings[:, 1], 
+        c=labels, 
+        cmap='tab10', 
+        s=40, 
+        edgecolor='k', 
+        alpha=0.8
+    )
 
-# # Add titles and labels
-# plt.xlabel('Dimension 1', fontsize=14)
-# plt.ylabel('Dimension 2', fontsize=14)
+    # Create a legend instead of a colorbar
+    unique_labels = np.unique(labels)
+    handles = [
+        mpatches.Patch(color=scatter.cmap(scatter.norm(label)), label=label_map[label]) 
+        for label in unique_labels
+    ]
+    plt.legend(
+        handles=handles, 
+        title="Emotion Categories", 
+        loc='upper right', 
+        fontsize=10, 
+        title_fontsize=12
+    )
 
-# # Customize grid and background
-# plt.grid(True, linestyle='--', alpha=0.6)
-# plt.gca().set_facecolor('#f7f7f7')
+    # Add titles and labels
+    plt.xlabel('Dimension 1', fontsize=14)
+    plt.ylabel('Dimension 2', fontsize=14)
 
-# # Save the plot
-# output_dir = './UMAPplots'
-# os.makedirs(output_dir, exist_ok=True)
-# plt.savefig(f'{output_dir}/umap_alex_gnn.png', dpi=300, bbox_inches='tight')
+    # Customize grid and background
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.gca().set_facecolor('#f7f7f7')
+
+    # Save the plot
+    output_dir = './UMAPplots'
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(f'{output_dir}/umap_alex_gnn.png', dpi=300, bbox_inches='tight')
