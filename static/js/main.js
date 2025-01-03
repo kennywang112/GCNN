@@ -103,4 +103,3 @@ function updateCurrentModelDisplay() {
         modelDisplay.textContent = "ResNet18 + GNN";
     }
 }
-

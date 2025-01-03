@@ -46,6 +46,20 @@
     <script src="../static/js/plots.js"></script>
 
     <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        // 啟用攝像頭
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error("Error accessing the camera:", error);
+            });
+    </script>
+    
+    <script>
         window.onload = function () {
             console.log("Page loaded, starting intervals...");
             const cameraButton = document.getElementById('toggle-camera');
@@ -110,6 +124,8 @@
                         <p id="current-model-name" style="margin: 0; font-weight: bold; color: #333;">AlexNet + GNN</p>
                     </div>
                 </ul>
+                <video id="video" autoplay muted></video>
+                <canvas id="canvas" style="display:none;"></canvas>
                 <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Camera Stream">
                 <div class="button-group">
                     <button id="toggle-camera" onclick="toggleCamera()">Turn On Camera</button>
@@ -252,7 +268,6 @@
             </div>
             
         </section>
-
     </main><!-- /#main -->
 </body>
 </html>
