@@ -41,7 +41,7 @@ val_size = total_size - train_size
 train_data, val_data = random_split(data_list, [train_size, val_size])
 
 # Step 2: Create DataLoader for training and validation
-batch_size = 64
+batch_size = 16
 train_loader = GeoDataLoader(train_data, batch_size=batch_size, shuffle=True)
 val_loader = GeoDataLoader(val_data, batch_size=batch_size, shuffle=False)
 
@@ -53,12 +53,12 @@ hidden_channels = 64
 model_dict = get_model_list(device, num_node_features, hidden_channels)
 # model = Net_Alex(num_node_features, hidden_channels).to(device)
 criterion = nn.CrossEntropyLoss()
-num_epochs = 25
+num_epochs = 3
 print('Start training ...')
 for i, (model_name, model) in enumerate(model_dict.items()):
     params = {
     "model": model_name,
-    "num_epochs": 25,
+    "num_epochs": num_epochs,
     "lr":0.001,
     }
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -70,6 +70,7 @@ for i, (model_name, model) in enumerate(model_dict.items()):
             model.train()
             total_loss = 0
             correct = 0
+            Training = True
             for batch in train_loader:
                 batch  = batch.to(device)
                 x = batch.x
@@ -80,31 +81,18 @@ for i, (model_name, model) in enumerate(model_dict.items()):
 
                 optimizer.zero_grad()
                 
-                if i % 2 == 0:
+                if 'only' in model_name:
                     out = model(image_features)
-                    loss = criterion(out, batch_y)
-                    loss.backward()
-                    optimizer.step()
-                    total_loss += loss.item()
-
-                    _, pred = out.max(dim=1)
-                    correct += (pred == batch_y).sum().item()
+                    loss, pred = oneHead_model(criterion, batch_y, out, Training)
                 else:
                     GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
                     if GNN_output is not None:
-                        loss_GNN = criterion(GNN_output, batch_y)
-                        loss_AlexNet = criterion(CNN_output, batch_y)
-                        loss = (loss_GNN + loss_AlexNet) / 2
-                        loss.backward()
-                        _, pred = GNN_output.max(dim=1)
-                        correct += (pred == batch_y).sum().item()
+                        loss, pred = twoHead_model(criterion, batch_y, GNN_output, CNN_output, Training)
                     else:
-                        loss = criterion(CNN_output, batch_y)
-                        loss.backward()
-                        _, pred = CNN_output.max(dim=1)
-                        correct += (pred == batch_y).sum().item()
-                    optimizer.step()
-                    total_loss += loss.item()
+                        loss, pred = oneHead_model(criterion, batch_y, CNN_output, Training)
+                correct += (pred == batch_y).sum().item()
+                optimizer.step()
+                total_loss += loss.item()
             train_loss = total_loss / len(train_loader)
             train_accuracy = correct / len(train_data)
 
@@ -113,7 +101,8 @@ for i, (model_name, model) in enumerate(model_dict.items()):
             val_correct = 0
             epoch_preds = []
             epoch_labels = []
-        
+            
+            Training = False
             with torch.no_grad():
                 for batch in val_loader:
                     batch = batch.to(device)
@@ -123,26 +112,18 @@ for i, (model_name, model) in enumerate(model_dict.items()):
                     image_features = batch.image_features
                     batch_y = batch.y
 
-                    if i % 2 == 0:
+                    if 'only' in model_name:
                         out = model(image_features)
-                        loss = criterion(out, batch_y)
-                        val_loss += loss.item()
-
-                        _, pred = out.max(dim=1)
-                        val_correct += (pred == batch_y).sum().item()
+                        loss, pred = oneHead_model(criterion, batch_y, out, Training)
                     else:
-                        GNN_output, AlexNet_output = model(x, edge_index, edge_weight, batch.batch, image_features)
+                        GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
                         if GNN_output is not None:
-                            loss_GNN = criterion(GNN_output, batch_y)
-                            loss_AlexNet = criterion(AlexNet_output, batch_y)
-                            loss = (loss_GNN + loss_AlexNet) / 2
-                            _, pred = GNN_output.max(dim=1)
-                            val_correct += (pred == batch_y).sum().item()
+                            loss, pred = twoHead_model(criterion, batch_y, GNN_output, CNN_output, Training)
                         else:
-                            loss = criterion(AlexNet_output, batch_y)
-                            _, pred = AlexNet_output.max(dim=1)
-                            val_correct += (pred == batch_y).sum().item()
-                        val_loss += loss.item()
+                            loss, pred = oneHead_model(criterion, batch_y, CNN_output, Training)
+
+                    val_correct += (pred == batch_y).sum().item()
+                    val_loss += loss.item()
 
                     epoch_preds.extend(pred.cpu().numpy())
                     epoch_labels.extend(batch_y.cpu().numpy())
