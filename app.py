@@ -190,6 +190,9 @@ def switch_model():
 
 @app.route('/video_feed')
 def video_feed():
+    global camera_active
+    if not camera_active:
+        return jsonify({'error': 'Camera is not active'}), 400
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/toggle_camera', methods=['POST'])

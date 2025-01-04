@@ -44,36 +44,36 @@
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <script src="../static/js/main.js"></script>
     <script src="../static/js/plots.js"></script>
-
-    <script>
-        const video = document.getElementById('video');
-
-        // 啟用攝像頭
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(error => {
-                console.error("Error accessing the camera:", error);
-            });
-    </script>
     
     <script>
         window.onload = function () {
-            console.log("Page loaded, starting intervals...");
-            const cameraButton = document.getElementById('toggle-camera');
-            updateCurrentModelDisplay();
-            setInterval(refreshGradCam, 1000);
-            setInterval(updateProbabilities, 1000);
 
             drawCategoryBarChart();
             fetchAndPlotTrainAccuracy();
             fetchAndPlotTrainLoss();
             fetchAndPlotValCorrect();
             fetchAndPlotValLoss();
-            fetchAndPlotParallelCoordinates();
-            // const button = document.getElementById('toggle-camera');
+            // fetchAndPlotParallelCoordinates();
+
+            updateCurrentModelDisplay();
+            setInterval(refreshGradCam, 500);
+            setInterval(updateProbabilities, 500);
         };
+
+        // const video = document.getElementById('video');
+
+        function showModel(modelId) {
+                // 隱藏所有模型組
+                document.querySelectorAll('.portfolio-group').forEach(group => {
+                    group.style.display = 'none';
+                });
+        
+                // 顯示選定的模型組
+                const selectedModel = document.getElementById(modelId);
+                if (selectedModel) {
+                    selectedModel.style.display = 'block';
+                }
+            }
     </script>
 </head>
 <body>
@@ -109,7 +109,7 @@
         <div class="content-container" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
             <!-- 攝像頭視頻流及按鈕 -->
             <div class="video-container" style="display: flex; flex-direction: column; align-items: center;">
-                <ul class="nav navbar-nav navbar-right" style="display: flex; align-items: center; margin: 0; padding: 0;">
+                <ul class="nav navbar-nav navbar-right" style="display: flex; align-items: center; margin: 0; padding: 0; padding-bottom: 30px;">
                     <li class="dropdown" style="list-style: none; margin-right: 10px;">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" style="text-decoration: none; font-weight: bold;">
                             Select Model<i class="fa fa-caret-down hidden-xs" aria-hidden="true" style="margin-left: 5px;"></i>
@@ -123,7 +123,9 @@
                         <p id="current-model-name" style="margin: 0; font-weight: bold; color: #333;">AlexNet + GNN</p>
                     </div>
                 </ul>
-                <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Camera Stream">
+                <div class="video-container2">
+                    <img id="video-stream" src="" alt="Camera Stream">
+                </div>
                 <div class="button-group">
                     <button id="toggle-camera" onclick="toggleCamera()">Turn On Camera</button>
                     <button id="toggle-visualization" onclick="toggleVisualization()">Toggle Visualization</button>
@@ -166,23 +168,28 @@
                 <h2>詳細數據資訊</h2>
                 <div class="row1">
                     <div class="chart-block">
-                        <canvas id="dataChart"></canvas>
-                    </div>
-                    <div class="chart-block">
+                        <p>Training Accuracy</p>
                         <canvas id="trainAccuracyChart" width="400" height="200"></canvas>
                     </div>
                     <div class="chart-block">
+                        <p>Training Loss</p>
                         <canvas id="trainLossChart" width="400" height="200"></canvas>
                     </div>
                     <div class="chart-block">
+                        <p>Validation Correct</p>
                         <canvas id="valCorrectChart" width="400" height="200"></canvas>
                     </div>
                     <div class="chart-block">
+                        <p>Validation Loss</p>
                         <canvas id="valLossChart" width="400" height="200"></canvas>
                     </div>
                     <div class="chart-block">
-                        <canvas id="parallelCoordinatesContainer" width="400" height="200"></canvas>
+                        <p>Category Distribution</p>
+                        <canvas id="dataChart"></canvas>
                     </div>
+                    <!-- <div class="chart-block">
+                        <canvas id="parallelCoordinatesContainer" width="400" height="200"></canvas>
+                    </div> -->
                 </div>
             </div>
         </section>
@@ -190,73 +197,73 @@
         <section id="grad-cam" class="site-section section-portfolio">
             <div class="container">
                 <div class="text-center">
-                    <h2 class="heading-separator">Grad Cam</h2>
+                    <h2>Grad Cam</h2>
                     <a href="https://openaccess.thecvf.com/content_ICCV_2017/papers/Selvaraju_Grad-CAM_Visual_Explanations_ICCV_2017_paper.pdf">Paper</a>
                 </div>
-        
-                <!-- 前四個項目 -->
-                <div class="portfolio-group">
+
+                <div class="button-group">
+                    <button onclick="showModel('alexnet-gnn')">Alexnet+GNN</button>
+                    <button onclick="showModel('alexnet')">Alexnet</button>
+                    <button onclick="showModel('alexnet')">ResNet18</button>
+                    <button onclick="showModel('alexnet')">ResNet18+GNN</button>
+                </div>
+                
+                <!-- Alexnet+GNN Group -->
+                <div id="alexnet-gnn" class="portfolio-group" style="display: none;">
                     <h3 class="group-title">Alexnet+GNN</h3>
                     <div class="row">
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_1.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_2.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_3.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/netalex_4.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Happy</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- 後四個項目 -->
-                <div class="portfolio-group">
+                
+                <!-- Alexnet Group -->
+                <div id="alexnet" class="portfolio-group" style="display: none;">
                     <h3 class="group-title">Alexnet</h3>
                     <div class="row">
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_2.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_3.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
                                 <img src="{{ url_for('static', filename='grad/alex_4.png') }}" class="img-res" alt="">
-                                <h4 class="portfolio-item-title">Portfolio item</h4>
                                 <p>Happy</p>
                             </div>
                         </div>

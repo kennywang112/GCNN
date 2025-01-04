@@ -836,6 +836,22 @@ html, body {
     z-index: 1; /* 背景層 */
 }
 
+.video-container2 {
+    width: 640px;
+    height: 480px;
+    background: url('../img/default-placeholder.JPG') center center / cover no-repeat;
+    position: relative;
+    border-radius: 15px;
+}
+
+.video-container2 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 15px;
+}
+
 #video-stream {
     border: 1px solid black;
     width: 640px;
@@ -946,7 +962,7 @@ canvas {
     cursor: pointer;
     border: none;
     border-radius: 30px; /* 更圓滑的圓角 */
-    background: linear-gradient(135deg, #258e38, #656469); /* 漸變背景 */
+    background: linear-gradient(135deg, #232856, #656469); /* 漸變背景 */
     color: #fff; /* 白色文字 */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* 添加陰影 */
     transition: all 0.3s ease; /* 平滑的變化效果 */
@@ -954,7 +970,7 @@ canvas {
 }
 
 .button-group button:hover {
-    background: linear-gradient(135deg, #656469, #258e38); /* 反向漸變效果 */
+    background: linear-gradient(135deg, #656469, #232856); /* 反向漸變效果 */
     transform: scale(1.05); /* 輕微放大效果 */
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* 增強陰影效果 */
 }
@@ -1125,7 +1141,7 @@ canvas {
 
 /* Section: Map Feature */
 .section-map-feature {
-    padding-top: 250px;
+    padding-top: 20px;
     background: #071021 url(../img/map.png) no-repeat top center / cover; 
 }
 

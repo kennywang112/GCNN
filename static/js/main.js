@@ -1,11 +1,32 @@
-// Toggle camera state
+function startVideoFeed() {
+    const videoStream = document.getElementById('video-stream');
+    videoStream.src = '/video_feed';
+}
+
+// // Toggle camera state
+// function toggleCamera() {
+//     fetch('/toggle_camera', { method: 'POST' })
+//         .then(response => response.json())
+//         .then(data => {
+//             const button = document.getElementById('toggle-camera');
+//             button.textContent = data.camera_active ? 'Turn Off Camera' : 'Turn On Camera';
+//         });
+// }
+
 function toggleCamera() {
     fetch('/toggle_camera', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             const button = document.getElementById('toggle-camera');
             button.textContent = data.camera_active ? 'Turn Off Camera' : 'Turn On Camera';
-        });
+
+            if (data.camera_active) {
+                startVideoFeed();
+            } else {
+                alert('Camera turned off.');
+            }
+        })
+        .catch(error => console.error('Error toggling camera:', error));
 }
 
 // Toggle visualization overlay

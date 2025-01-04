@@ -66,13 +66,13 @@ class Net_VGG(nn.Module):
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
 
-        self.vgg19 = models.vgg19(pretrained=True)
-        self.vgg19.classifier = nn.Sequential(
-            *list(self.vgg19.classifier.children())[:-1]
+        self.vgg16 = models.vgg16(pretrained=True)
+        self.vgg16.classifier = nn.Sequential(
+            *list(self.vgg16.classifier.children())[:-1]
         )
 
         self.fc_layers = nn.Sequential(
-            nn.Linear(hidden_channels + 4096, 256),  # GCN + VGG19 特徵
+            nn.Linear(hidden_channels + 4096, 256),  # GCN + VGG16 特徵
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(256, 64),
@@ -103,21 +103,21 @@ class Net_VGG(nn.Module):
             x = self.conv3(x, edge_index, edge_weight=edge_weight)
             x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
-            # 取得 VGG19 的特徵 (4096 維)
-            cnn_features = self.vgg19(image_features)  # [batch_size, 4096]
+            # 取得 VGG16 的特徵 (4096 維)
+            cnn_features = self.vgg16(image_features)  # [batch_size, 4096]
 
-            # 結合 GCN 與 VGG19 的特徵
+            # 結合 GCN 與 VGG16 的特徵
             combined_features = torch.cat([x, cnn_features], dim=1)  # [batch_size, hidden_channels+4096]
             GNN_output = self.fc_layers(combined_features)
 
-            # 僅使用 VGG19 特徵做分類
+            # 僅使用 VGG16 特徵做分類
             only_vgg_output = self.fc_only_vgg(cnn_features)
 
             return GNN_output, only_vgg_output
 
         else:
-            # 沒有 GCN 的輸入，僅使用 VGG19
-            cnn_features = self.vgg19(image_features)
+            # 沒有 GCN 的輸入，僅使用 VGG16
+            cnn_features = self.vgg16(image_features)
             return None, self.fc_only_vgg(cnn_features)
         
 class Net_ResNet18(nn.Module):
@@ -214,17 +214,17 @@ class AlexNet_Only(nn.Module):
         out = self.fc(features)     # [N, num_classes]
         return out
     
-class VGG19_Only(nn.Module):
+class VGG16_Only(nn.Module):
     def __init__(self, num_classes=7):
-        super(VGG19_Only, self).__init__()
+        super(VGG16_Only, self).__init__()
 
-        # 載入預訓練的 VGG19
-        self.vgg19 = models.vgg19(pretrained=True)
+        # 載入預訓練的 VGG16
+        self.vgg16 = models.vgg16(pretrained=True)
         
-        # 原本 VGG19 的 classifier 結構最後是輸出到 1000 維
+        # 原本 VGG16 的 classifier 結構最後是輸出到 1000 維
         # 移除最後一層，保留 4096 維的輸出
-        self.vgg19.classifier = nn.Sequential(
-            *list(self.vgg19.classifier.children())[:-1]
+        self.vgg16.classifier = nn.Sequential(
+            *list(self.vgg16.classifier.children())[:-1]
         )
 
         # 自定義全連接層，用於最終的分類 (這裡假設 7 類)
@@ -242,8 +242,8 @@ class VGG19_Only(nn.Module):
         """
         x: (N, 3, 224, 224) - 輸入圖像
         """
-        # 利用 VGG19 抽取 4096 維特徵
-        features = self.vgg19(x)  # [N, 4096]
+        # 利用 VGG16 抽取 4096 維特徵
+        features = self.vgg16(x)  # [N, 4096]
         # 經過自定義的分類層
         out = self.fc(features)   # [N, num_classes]
         return out
