@@ -53,7 +53,7 @@ num_node_features = 21
 
 for key, (directory, label) in dir_label_map.items():
     print(key)
-    data_dict = process_files(directory, label, image_dir, data_dict, key)
+    data_dict = process_files(directory, label, image_dir, data_dict, key, num_node_features)
 
 # save
 torch.save(data_dict, './output_data/data_dict.pth')

@@ -18,7 +18,6 @@ def read_and_process_csv(file_path):
     x = torch.rand((2, 21))  # Assume each node has 21 features
     return edge_index, edge_weight, x
 
-
 def process_image(image_path):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -42,9 +41,7 @@ def custom_collate(data_list):
     batch.image_features = torch.stack([data.image_features for data in data_list])  # Stack manually to keep shape
     return batch
 
-def process_files(directory, label, image_dir, data_dict, key):
-    
-    num_node_features = 21
+def process_files(directory, label, image_dir, data_dict, key, num_node_features):
     
     adjacency_files = set(f.replace('adjacency_matrix_', '').replace('.jpg.csv', '') for f in os.listdir(directory) if f.endswith('.csv'))
     image_files = set(f.replace('.jpg', '') for f in os.listdir(os.path.join(image_dir, key)) if f.endswith('.jpg'))
@@ -57,6 +54,7 @@ def process_files(directory, label, image_dir, data_dict, key):
         file_path = os.path.join(directory, f'adjacency_matrix_{unique_id}.jpg.csv')
 
         if unique_id in missing_adj:
+            print(unique_id)
             # No adj, use CNN only
             image_data = process_image(image_path)
             
@@ -70,6 +68,7 @@ def process_files(directory, label, image_dir, data_dict, key):
             data_dict[key].append(data)
             
         elif os.path.exists(file_path) and os.path.exists(image_path):
+            print(file_path)
             # Image with adjacency matrix
             data = process_adj_matrix(file_path, image_path)
             data.y = torch.tensor([label])

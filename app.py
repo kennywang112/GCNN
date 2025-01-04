@@ -187,7 +187,6 @@ def switch_model():
         print(f"Invalid model selected: {selected_model}")
         return jsonify({'success': False, 'message': 'Invalid model selected'}), 400
 
-
 @app.route('/video_feed')
 def video_feed():
     global camera_active

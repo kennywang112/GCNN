@@ -204,8 +204,10 @@
                 <div class="button-group">
                     <button onclick="showModel('alexnet-gnn')">Alexnet+GNN</button>
                     <button onclick="showModel('alexnet')">Alexnet</button>
-                    <button onclick="showModel('alexnet')">ResNet18</button>
-                    <button onclick="showModel('alexnet')">ResNet18+GNN</button>
+                    <button onclick="showModel('resnet18-gnn')">ResNet18+GNN</button>
+                    <button onclick="showModel('resnet18')">ResNet18</button>
+                    <button onclick="showModel('vgg16-gnn')">VGG16+GNN</button>
+                    <button onclick="showModel('vgg16')">VGG16</button>
                 </div>
                 
                 <!-- Alexnet+GNN Group -->
@@ -214,25 +216,25 @@
                     <div class="row">
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/netalex_1.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_Alex_1.png') }}" class="img-res" alt="">
                                 <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/netalex_2.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_Alex_2.png') }}" class="img-res" alt="">
                                 <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/netalex_3.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_Alex_3.png') }}" class="img-res" alt="">
                                 <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/netalex_4.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_Alex_4.png') }}" class="img-res" alt="">
                                 <p>Happy</p>
                             </div>
                         </div>
@@ -245,25 +247,149 @@
                     <div class="row">
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/alex_1.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/AlexNet_Only_1.png') }}" class="img-res" alt="">
                                 <p>Surprised</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/alex_2.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/AlexNet_Only_2.png') }}" class="img-res" alt="">
                                 <p>Fearful</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/alex_3.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/AlexNet_Only_3.png') }}" class="img-res" alt="">
                                 <p>Disgusted</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4 col-xs-6">
                             <div class="portfolio-item">
-                                <img src="{{ url_for('static', filename='grad/alex_4.png') }}" class="img-res" alt="">
+                                <img src="{{ url_for('static', filename='/GradCam/AlexNet_Only_4.png') }}" class="img-res" alt="">
+                                <p>Happy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resnet18+GNN Group -->
+                <div id="resnet18-gnn" class="portfolio-group" style="display: none;">
+                    <h3 class="group-title">Alexnet</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_ResNet18_1.png') }}" class="img-res" alt="">
+                                <p>Surprised</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_ResNet18_2.png') }}" class="img-res" alt="">
+                                <p>Fearful</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_ResNet18_3.png') }}" class="img-res" alt="">
+                                <p>Disgusted</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/Net_ResNet18_4.png') }}" class="img-res" alt="">
+                                <p>Happy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resnet18 Group -->
+                <div id="resnet18" class="portfolio-group" style="display: none;">
+                    <h3 class="group-title">Alexnet</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/ResNet18_Only_1.png') }}" class="img-res" alt="">
+                                <p>Surprised</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/ResNet18_Only_2.png') }}" class="img-res" alt="">
+                                <p>Fearful</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/ResNet18_Only_3.png') }}" class="img-res" alt="">
+                                <p>Disgusted</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/ResNet18_Only_4.png') }}" class="img-res" alt="">
+                                <p>Happy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VGG16+GNN Group -->
+                <div id="vgg16-gnn" class="portfolio-group" style="display: none;">
+                    <h3 class="group-title">Alexnet</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/alex_1.png') }}" class="img-res" alt="">
+                                <p>Surprised</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/alex_2.png') }}" class="img-res" alt="">
+                                <p>Fearful</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/alex_3.png') }}" class="img-res" alt="">
+                                <p>Disgusted</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/alex_4.png') }}" class="img-res" alt="">
+                                <p>Happy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VGG16 Group -->
+                <div id="vgg16" class="portfolio-group" style="display: none;">
+                    <h3 class="group-title">Alexnet</h3>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/VGG16_Only_1.png') }}" class="img-res" alt="">
+                                <p>Surprised</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/VGG16_Only_2.png') }}" class="img-res" alt="">
+                                <p>Fearful</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/VGG16_Only_3.png') }}" class="img-res" alt="">
+                                <p>Disgusted</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <div class="portfolio-item">
+                                <img src="{{ url_for('static', filename='/GradCam/VGG16_Only_4.png') }}" class="img-res" alt="">
                                 <p>Happy</p>
                             </div>
                         </div>
