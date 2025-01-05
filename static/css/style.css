@@ -673,8 +673,8 @@ html, body {
     display: block;
     width: 100vw;
     height: 100vh;
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 80%;
+    max-height: 80%;
     object-fit: cover;
 }
 
@@ -1174,27 +1174,12 @@ canvas {
 
 /* Section: Portfolio */
 .portfolio-item {
-    margin-top: 30px;
+    margin-top: 15px;
 }
 
 .portfolio-item {
     height: 270px;
     position: relative;
-}
-
-.portfolio-item:before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 100%;
-    bottom: 0;
-    background-color: #f5f5f8;
-    transition: right 0.25s ease-in-out;
-    -moz-transition: right 0.25s ease-in-out;
-    -webkit-transition: right 0.25s ease-in-out;
-    -o-transition: right 0.25s ease-in-out;
-    -ms-transition: right 0.25s ease-in-out;
 }
 
 .portfolio-item:hover:before {
@@ -1226,7 +1211,7 @@ canvas {
 }
 
 .portfolio-item a {
-    bottom: 15px;
+    bottom: 10px;
     color: #26272d;
     padding: 5px 12px;
     border: 1px solid #26272d;

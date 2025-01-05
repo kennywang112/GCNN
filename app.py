@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import mediapipe as mp
-from models import Net_Alex, Net_ResNet18, NetWrapper
+from models import Net_Alex, Net_ResNet18, Net_VGG, NetWrapper
 from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
 
 from pytorch_grad_cam import GradCAM
@@ -36,21 +36,29 @@ label_map = {
     5: "Angry",
     6: "Neutral"
 }
+hidden_channels=64
+num_node_features=21
 
-model_alexnet_gnn = Net_Alex(hidden_channels=64, num_node_features=21)
+model_alexnet_gnn = Net_Alex(num_node_features, hidden_channels)
 model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
 model_alexnet_gnn.eval()
 model_alexnet_gnn.to(device)
 
-model_resnet_gnn = Net_ResNet18(hidden_channels=64, num_node_features=21)
+model_resnet_gnn = Net_ResNet18(num_node_features, hidden_channels)
 model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Resnet.pth', map_location=torch.device(device)))
 model_resnet_gnn.eval()
 model_resnet_gnn.to(device)
 
+model_vgg_gnn = Net_VGG(num_node_features, hidden_channels)
+model_vgg_gnn.load_state_dict(torch.load('./model/model_Net_VGG.pth', map_location=torch.device(device)))
+model_vgg_gnn.eval()
+model_vgg_gnn.to(device)
+
 # Available models
 target_layers_map = {
     "alexnet_gnn": model_alexnet_gnn,
-    "resnet18_gnn": model_resnet_gnn
+    "resnet18_gnn": model_resnet_gnn,
+    "vgg16_gnn": model_vgg_gnn
 }
 current_model_name = "alexnet_gnn"
 current_model = model_alexnet_gnn
@@ -257,8 +265,10 @@ def generate_grad_cam():
         print(current_model_name)
         if current_model_name == 'alexnet_gnn':
             target_layers = [wrapped_model.model.alexnet.features[-1]]
-        else:
+        elif current_model_name == 'resnet18_gnn':
             target_layers = [wrapped_model.model.resnet.layer4[-1]]
+        elif current_model_name == 'vgg16_gnn':
+            target_layers = [wrapped_model.model.vgg16.features[-1]]
 
         cam = GradCAM(model=wrapped_model, target_layers=target_layers)
         grayscale_cam = cam(input_tensor=input_tensor)
@@ -285,14 +295,14 @@ file_path_train_acc = './mlflow/train_accuracy.csv'
 file_path_train_loss = './mlflow/train_loss.csv'
 file_path_val_correct = './mlflow/val_correct.csv'
 file_path_val_loss = './mlflow/val_loss.csv'
-file_path_model_performance = './mlflow/train_accuracy-val_correct-lr-model-num_epochs.csv'
+# file_path_model_performance = './mlflow/train_accuracy-val_correct-lr-model-num_epochs.csv'
 
 # 读取数据
 train_data_acc = pd.read_csv(file_path_train_acc)
 train_data_loss = pd.read_csv(file_path_train_loss)
 val_data_correct = pd.read_csv(file_path_val_correct)
 val_data_loss = pd.read_csv(file_path_val_loss)
-model_performance_data = pd.read_csv(file_path_model_performance)
+# model_performance_data = pd.read_csv(file_path_model_performance)
 
 @app.route('/get_train_accuracy', methods=['GET'])
 def get_train_accuracy():

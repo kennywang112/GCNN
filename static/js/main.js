@@ -3,16 +3,6 @@ function startVideoFeed() {
     videoStream.src = '/video_feed';
 }
 
-// // Toggle camera state
-// function toggleCamera() {
-//     fetch('/toggle_camera', { method: 'POST' })
-//         .then(response => response.json())
-//         .then(data => {
-//             const button = document.getElementById('toggle-camera');
-//             button.textContent = data.camera_active ? 'Turn Off Camera' : 'Turn On Camera';
-//         });
-// }
-
 function toggleCamera() {
     fetch('/toggle_camera', { method: 'POST' })
         .then(response => response.json())
@@ -122,5 +112,7 @@ function updateCurrentModelDisplay() {
         modelDisplay.textContent = "AlexNet + GNN";
     } else if (currentModel === 'resnet18_gnn') {
         modelDisplay.textContent = "ResNet18 + GNN";
+    } else if (currentModel === 'vgg16_gnn') {
+        modelDisplay.textContent = "VGG16 + GNN";
     }
 }

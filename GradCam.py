@@ -79,6 +79,11 @@ model_vgg = VGG16_Only(num_class)
 model_vgg.load_state_dict(torch.load('./model/model_VGG16_only.pth', map_location=torch.device(device)))
 model_vgg.eval()
 model_vgg.to(device)
+print("Load model...")
+model_vgg = Net_VGG(num_node_features, hidden_channels)
+model_vgg.load_state_dict(torch.load('./model/model_Net_VGG.pth', map_location=torch.device(device)))
+model_vgg.eval()
+model_vgg.to(device)
 
 test_pth = [
     'Image_data/DATASET/test/1/test_0002_aligned.jpg',
@@ -114,11 +119,9 @@ for model in [model_alexnet_gnn, model_resnet_gnn, model_alexnet, model_resnet, 
         if model.__class__.__name__ == 'Net_Alex':
             wrapped_model = NetWrapper(model, edge_index, edge_weight, batch)
             target_layers = [wrapped_model.model.alexnet.features[-1]]
-            targets = None
         elif model.__class__.__name__ == 'Net_ResNet18':
             wrapped_model = NetWrapper(model, edge_index, edge_weight, batch)
             target_layers = [wrapped_model.model.resnet.layer4[-1]]
-            targets = None
         elif model.__class__.__name__ == 'AlexNet_Only':
            target_layers = [model.alexnet.features[-1]]
            wrapped_model = model
@@ -128,6 +131,10 @@ for model in [model_alexnet_gnn, model_resnet_gnn, model_alexnet, model_resnet, 
         elif model.__class__.__name__ == 'VGG16_Only':
             target_layers = [model.vgg16.features[-1]]
             wrapped_model = model
+        elif model.__class__.__name__ == 'Net_VGG':
+            wrapped_model = NetWrapper(model, edge_index, edge_weight, batch)
+            target_layers = [wrapped_model.model.vgg16.features[-1]]
+
 
         cam = GradCAM(model=wrapped_model, target_layers=target_layers)
 
@@ -139,5 +146,5 @@ for model in [model_alexnet_gnn, model_resnet_gnn, model_alexnet, model_resnet, 
             # save the plot
             plt.imsave(f'static/GradCam/{model.__class__.__name__}_{index + 1}.png', visualization)
         except FileNotFoundError:
-            os.mkdir('GradCam')
+            os.mkdir('static/GradCam')
             plt.imsave(f'static/GradCam/{model.__class__.__name__}_{index + 1}.png', visualization)
