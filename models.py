@@ -159,26 +159,42 @@ class Net_ResNet18(nn.Module):
 
     def forward(self, x, edge_index, edge_weight, batch, image_features):
 
-        if x is not None and edge_index is not None and edge_index.numel() > 0:
-            x = self.conv1(x, edge_index, edge_weight=edge_weight)
-            x = F.relu(x)
-            x = self.conv2(x, edge_index, edge_weight=edge_weight)
-            x = F.relu(x)
-            x = self.conv3(x, edge_index, edge_weight=edge_weight)
-            x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
+        # if x is not None and edge_index is not None and edge_index.numel() > 0:
+        #     x = self.conv1(x, edge_index, edge_weight=edge_weight)
+        #     x = F.relu(x)
+        #     x = self.conv2(x, edge_index, edge_weight=edge_weight)
+        #     x = F.relu(x)
+        #     x = self.conv3(x, edge_index, edge_weight=edge_weight)
+        #     x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
-            resnet_features = self.resnet(image_features)  # [batch_size, 512]
+        #     resnet_features = self.resnet(image_features)  # [batch_size, 512]
 
-            combined_features = torch.cat([x, resnet_features], dim=1)  
-            GNN_output = self.fc_layers(combined_features)
+        #     combined_features = torch.cat([x, resnet_features], dim=1)  
+        #     GNN_output = self.fc_layers(combined_features)
 
-            only_resnet_output = self.fc_only_resnet(resnet_features)
+        #     only_resnet_output = self.fc_only_resnet(resnet_features)
 
-            return GNN_output, only_resnet_output
+        #     return GNN_output, only_resnet_output
 
-        else:
-            resnet_features = self.resnet(image_features)
-            return None, self.fc_only_resnet(resnet_features)
+        # else:
+        #     resnet_features = self.resnet(image_features)
+        #     return None, self.fc_only_resnet(resnet_features)
+
+        x = self.conv1(x, edge_index, edge_weight=edge_weight)
+        x = F.relu(x)
+        x = self.conv2(x, edge_index, edge_weight=edge_weight)
+        x = F.relu(x)
+        x = self.conv3(x, edge_index, edge_weight=edge_weight)
+        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
+
+        resnet_features = self.resnet(image_features)  # [batch_size, 512]
+
+        combined_features = torch.cat([x, resnet_features], dim=1)  
+        GNN_output = self.fc_layers(combined_features)
+
+        only_resnet_output = self.fc_only_resnet(resnet_features)
+
+        return GNN_output, only_resnet_output
         
 class AlexNet_Only(nn.Module):
     def __init__(self, num_classes=7):

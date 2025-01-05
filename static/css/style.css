@@ -1142,7 +1142,7 @@ canvas {
 /* Section: Map Feature */
 .section-map-feature {
     padding-top: 20px;
-    background: #071021 url(../img/map.png) no-repeat top center / cover; 
+    /* background: #071021 url(../img/map.png) no-repeat top center / cover;  */
 }
 
 .section-map-feature h2 {

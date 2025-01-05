@@ -8,11 +8,11 @@ def get_model_list(device, num_node_features, hidden_channels):
     model_Net_VGG = Net_VGG(num_node_features, hidden_channels).to(device)
     model_Net_Restnet = Net_ResNet18(num_node_features, hidden_channels).to(device)
     model_dict = {
-        "model_alex_only":      model_alex_only,
-        "model_Net_Alex":       model_Net_Alex,
-        "model_VGG16_only":     model_VGG16_only,
-        "model_Net_VGG":        model_Net_VGG,
-        "model_Restnet18_only": model_Restnet18_only,
+        # "model_alex_only":      model_alex_only,
+        # "model_Net_Alex":       model_Net_Alex,
+        # "model_VGG16_only":     model_VGG16_only,
+        # "model_Net_VGG":        model_Net_VGG,
+        # "model_Restnet18_only": model_Restnet18_only,
         "model_Net_Restnet":    model_Net_Restnet
     }
     return model_dict
