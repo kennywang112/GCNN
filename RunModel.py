@@ -73,32 +73,23 @@ for i, (model_name, model) in enumerate(model_dict.items()):
                 batch_y = batch.y
 
                 optimizer.zero_grad()
-                
-                if i % 2 == 0:
-                    out = model(image_features)
-                    loss = criterion(out, batch_y)
-                    loss.backward()
-                    optimizer.step()
-                    total_loss += loss.item()
 
-                    _, pred = out.max(dim=1)
+                GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
+                if GNN_output is not None:
+                    loss_GNN = criterion(GNN_output, batch_y)
+                    loss_AlexNet = criterion(CNN_output, batch_y)
+                    loss = (loss_GNN + loss_AlexNet) / 2
+                    loss.backward()
+                    _, pred = GNN_output.max(dim=1)
                     correct += (pred == batch_y).sum().item()
                 else:
-                    GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
-                    if GNN_output is not None:
-                        loss_GNN = criterion(GNN_output, batch_y)
-                        loss_AlexNet = criterion(CNN_output, batch_y)
-                        loss = (loss_GNN + loss_AlexNet) / 2
-                        loss.backward()
-                        _, pred = GNN_output.max(dim=1)
-                        correct += (pred == batch_y).sum().item()
-                    else:
-                        loss = criterion(CNN_output, batch_y)
-                        loss.backward()
-                        _, pred = CNN_output.max(dim=1)
-                        correct += (pred == batch_y).sum().item()
-                    optimizer.step()
-                    total_loss += loss.item()
+                    loss = criterion(CNN_output, batch_y)
+                    loss.backward()
+                    _, pred = CNN_output.max(dim=1)
+                    correct += (pred == batch_y).sum().item()
+                optimizer.step()
+                total_loss += loss.item()
+
             train_loss = total_loss / len(train_loader)
             train_accuracy = correct / len(train_data)
 
@@ -117,26 +108,18 @@ for i, (model_name, model) in enumerate(model_dict.items()):
                     image_features = batch.image_features
                     batch_y = batch.y
 
-                    if i % 2 == 0:
-                        out = model(image_features)
-                        loss = criterion(out, batch_y)
-                        val_loss += loss.item()
-
-                        _, pred = out.max(dim=1)
+                    GNN_output, AlexNet_output = model(x, edge_index, edge_weight, batch.batch, image_features)
+                    if GNN_output is not None:
+                        loss_GNN = criterion(GNN_output, batch_y)
+                        loss_AlexNet = criterion(AlexNet_output, batch_y)
+                        loss = (loss_GNN + loss_AlexNet) / 2
+                        _, pred = GNN_output.max(dim=1)
                         val_correct += (pred == batch_y).sum().item()
                     else:
-                        GNN_output, AlexNet_output = model(x, edge_index, edge_weight, batch.batch, image_features)
-                        if GNN_output is not None:
-                            loss_GNN = criterion(GNN_output, batch_y)
-                            loss_AlexNet = criterion(AlexNet_output, batch_y)
-                            loss = (loss_GNN + loss_AlexNet) / 2
-                            _, pred = GNN_output.max(dim=1)
-                            val_correct += (pred == batch_y).sum().item()
-                        else:
-                            loss = criterion(AlexNet_output, batch_y)
-                            _, pred = AlexNet_output.max(dim=1)
-                            val_correct += (pred == batch_y).sum().item()
-                        val_loss += loss.item()
+                        loss = criterion(AlexNet_output, batch_y)
+                        _, pred = AlexNet_output.max(dim=1)
+                        val_correct += (pred == batch_y).sum().item()
+                    val_loss += loss.item()
 
                     epoch_preds.extend(pred.cpu().numpy())
                     epoch_labels.extend(batch_y.cpu().numpy())

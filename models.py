@@ -167,7 +167,7 @@ class Net_ResNet18(nn.Module):
         #     x = self.conv3(x, edge_index, edge_weight=edge_weight)
         #     x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
-        #     resnet_features = self.resnet(image_features)  # [batch_size, 512]
+        #     resnet_features = self.resnet(image_features) # [batch_size, 512]
 
         #     combined_features = torch.cat([x, resnet_features], dim=1)  
         #     GNN_output = self.fc_layers(combined_features)
@@ -187,7 +187,7 @@ class Net_ResNet18(nn.Module):
         x = self.conv3(x, edge_index, edge_weight=edge_weight)
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
-        resnet_features = self.resnet(image_features)  # [batch_size, 512]
+        resnet_features = self.resnet(image_features) # [batch_size, 512]
 
         combined_features = torch.cat([x, resnet_features], dim=1)  
         GNN_output = self.fc_layers(combined_features)
@@ -229,7 +229,7 @@ class AlexNet_Only(nn.Module):
         # 經過自定義的分類層
         out = self.fc(features)     # [N, num_classes]
         return out
-    
+
 class VGG16_Only(nn.Module):
     def __init__(self, num_classes=7):
         super(VGG16_Only, self).__init__()
