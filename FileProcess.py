@@ -35,7 +35,7 @@ dir_5 = './output_data/adjacency/adjacency_5'
 dir_6 = './output_data/adjacency/adjacency_6'
 dir_7 = './output_data/adjacency/adjacency_7'
 
-image_dir = './Image_data/DATASET/train'
+image_dir = './Image_data/DATASET/test'
 
 dir_label_map = {
     '1': (dir_1, 0),
@@ -56,7 +56,7 @@ for key, (directory, label) in dir_label_map.items():
     data_dict = process_files(directory, label, image_dir, data_dict, key, num_node_features)
 
 # save
-torch.save(data_dict, './output_data/data_dict_inception.pth')
+torch.save(data_dict, './output_data/data_dict_test.pth')
 
 print("Processed data")
 print([len(data_dict[f'{i}']) for i in range(1, 8)])

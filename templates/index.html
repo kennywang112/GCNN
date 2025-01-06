@@ -80,20 +80,14 @@
     <header id="masthead" class="site-header">
         <nav id="primary-navigation" class="site-navigation">
             <div class="container">
-
                 <div class="collapse navbar-collapse" id="agency-navbar-collapse">
-
                     <ul class="nav navbar-nav navbar-right">
-
                         <li class="active"><a href="index.html" data-toggle="dropdown">Home</a></li>
-                        <li><a href="#details-section">詳細數據</a></li>
+                        <li><a href="#details-section">Data</a></li>
                         <li><a href="#grad-cam">Grad Cam</a></li>
                         <li><a href="https://github.com/kennywang112/GCNN">Github</a></li>
-
                     </ul>
-
                 </div>
-
             </div>   
         </nav><!-- /.site-navigation -->
     </header><!-- /#mastheaed -->
@@ -101,11 +95,11 @@
     <div id="hero" class="hero overlay">
         <div class="hero-content">
             <div class="hero-text">
-                <h1>第八組期末專題</h1>
+                <!-- <h1>第八組期末專題</h1> -->
             </div><!-- /.hero-text -->
         </div><!-- /.hero-content -->
         <!-- 包裹視頻流和概率顯示區域的容器 -->
-        <div class="content-container" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
+        <div class="content-container" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 120px;">
             <!-- 攝像頭視頻流及按鈕 -->
             <div class="video-container" style="display: flex; flex-direction: column; align-items: center;">
                 <ul class="nav navbar-nav navbar-right" style="display: flex; align-items: center; margin: 0; padding: 0; padding-bottom: 30px;">
@@ -134,7 +128,7 @@
             </div>
 
             <!-- 顯示類別概率 -->
-            <div id="probabilities-container" style="display: flex; flex-direction: column; align-items: center;">
+            <div id="probabilities-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 50px; margin-left: 50px;">
                 <div id="probabilities">
                     <h3>Class Probabilities</h3>
                     <table id="probabilities-table" style="width: 100%; border-collapse: collapse;">
@@ -165,7 +159,7 @@
 
         <section id="details-section" class="site-section section-map-feature text-center">
             <div class="container">
-                <h2>詳細數據資訊</h2>
+                <h1 style="font-family: Arial, sans-serif; color: rgb(33, 108, 77);">詳細數據資訊</h1>
                 <div class="row1">
                     <div class="chart-block">
                         <p>Training Accuracy</p>
@@ -187,9 +181,6 @@
                         <p>Category Distribution</p>
                         <canvas id="dataChart"></canvas>
                     </div>
-                    <!-- <div class="chart-block">
-                        <canvas id="parallelCoordinatesContainer" width="400" height="200"></canvas>
-                    </div> -->
                 </div>
             </div>
         </section>

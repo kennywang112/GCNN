@@ -85,6 +85,7 @@ latest_probabilities = None
 visualization_bgr = None
 latest_detection = None
 camera = None
+frame = None
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -92,7 +93,7 @@ transform = transforms.Compose([
 ])
 
 def generate_frames():
-    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr, camera
+    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr, camera, frame
     print(f"Display Visualization: {display_visualization}") 
     last_detection_time = 0  # 初始化上一次檢測的時間
     detection_interval = 0.2   # 設定檢測間隔為 2 秒
@@ -165,8 +166,8 @@ def generate_frames():
                         matrix_vis = visualize_adjacency_matrix(frame, adjacency_matrix, face_landmarks, w, h)
                         matrix_h, matrix_w = matrix_vis.shape[:2]
                         frame[0:matrix_h, 0:matrix_w] = matrix_vis
-                        cv2.putText(frame, "Visualization ON", (10, 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        # cv2.putText(frame, "Visualization ON", (10, 30),
+                        #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                 # 將幀編碼並返回
                 _, buffer = cv2.imencode('.jpg', frame)
@@ -205,9 +206,18 @@ def video_feed():
 @app.route('/toggle_camera', methods=['POST'])
 def toggle_camera():
     global camera_active, camera
-    camera = cv2.VideoCapture(0)
+    if not camera_active:
+        if camera is None or not camera.isOpened():
+            camera = cv2.VideoCapture(0)
+            if not camera.isOpened():
+                return jsonify({'error': 'Unable to access the camera'}), 500
+    else:
+        if camera and camera.isOpened():
+            camera.release()
+            camera = None
     camera_active = not camera_active
     return jsonify({'camera_active': camera_active})
+
 
 @app.route('/toggle_visualization', methods=['POST'])
 def toggle_visualization():
@@ -227,10 +237,9 @@ def get_probabilities():
     ]
     return jsonify({'probabilities': probabilities_with_labels})
 
-
 @app.route('/generate_grad_cam', methods=['POST'])
 def generate_grad_cam():
-    global current_model, latest_detection, visualization_bgr
+    global current_model, latest_detection, visualization_bgr, frame
 
     if latest_detection is None:
         return jsonify({'error': 'No face detected'}), 400
@@ -240,7 +249,6 @@ def generate_grad_cam():
         x_min, y_min = latest_detection['x_min'], latest_detection['y_min']
         x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
 
-        _, frame = camera.read()
         face_roi = frame[y_min:y_max, x_min:x_max]
 
         if face_roi.size == 0:
@@ -273,7 +281,9 @@ def generate_grad_cam():
         cam = GradCAM(model=wrapped_model, target_layers=target_layers)
         grayscale_cam = cam(input_tensor=input_tensor)
 
-        visualization = show_cam_on_image(rgb_img, grayscale_cam[0, :], use_rgb=True)
+        base_image_resized = cv2.resize(face_roi, (224, 224)) / 255.0
+        visualization = show_cam_on_image(base_image_resized, grayscale_cam[0, :], use_rgb=True)
+        # visualization = show_cam_on_image(rgb_img, grayscale_cam[0, :], use_rgb=True)
         visualization_bgr = (visualization * 255).astype(np.uint8)
 
         return jsonify({'message': 'Grad-CAM generated successfully'})

@@ -30,7 +30,7 @@ print("Categories:", CATEGORIES)
 
 print("Creating connections.csv")
 face_mesh_connections = mp.solutions.face_mesh.FACEMESH_TESSELATION
-folder_path = './output_data'  # 您希望創建的資料夾名稱
+folder_path = './output_data'
 file_path = os.path.join(folder_path, 'connection.csv')
 os.makedirs(folder_path, exist_ok=True)
 with open(file_path, 'w', newline='') as connections_csv:
@@ -42,8 +42,7 @@ with open(file_path, 'w', newline='') as connections_csv:
         point1 = connection[0]
         point2 = connection[1]
         connections_writer.writerow([index, point1, point2])
-        
-# 指定處理類別
+
 print("Creating landmarks.csv")
 
 for desired_category in CATEGORIES:

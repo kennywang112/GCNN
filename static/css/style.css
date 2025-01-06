@@ -48,6 +48,7 @@
     flex: 1 1 calc(50% - 50px);
     box-sizing: border-box; 
     padding: 10px;
+    background-color: #ffffff;
 }
 
 canvas {
@@ -696,6 +697,8 @@ html, body {
     background-color: transparent;
     width: 100%;
     z-index: 3;
+    margin-left: 100px;
+    margin-top: 20px;
 }
 
 /* Site-logo */
@@ -748,6 +751,30 @@ html, body {
 .navbar-nav > li + li {
     margin-left: 30px;
 }
+
+/**/
+.navbar-nav li {
+    position: relative;
+    display: inline-block;
+    margin: 0 10px; /* 可调整间距 */
+}
+
+.navbar-nav li a {
+    display: block;
+    padding: 10px 20px; /* 控制内部间距 */
+    background-color: #1d6332; /* 背景颜色 */
+    color: #fff; /* 字体颜色 */
+    text-decoration: none; /* 去掉下划线 */
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); /* 添加框的阴影 */
+    border-radius: 4px; /* 可选，增加圆角 */
+    transition: transform 0.2s ease-in-out; /* 增加动画效果 */
+}
+
+.navbar-nav li a:hover {
+    transform: translateY(-4px); /* 鼠标悬浮效果：轻微移动 */
+    box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.7); /* 悬浮时增加阴影强度 */
+}
+/**/
 
 .nav .open > a, 
 .nav .open > a:focus, 
@@ -829,7 +856,7 @@ html, body {
 /* HERO
 ================================================== */
 .hero {
-    background: url(../img/hero.jpg) no-repeat center / cover;
+    background: url(../img/Home_0.png) no-repeat center / cover;
     height: 100%;
     width: 100%;
     position: relative;
@@ -837,8 +864,8 @@ html, body {
 }
 
 .video-container2 {
-    width: 640px;
-    height: 480px;
+    width: 840px;
+    height: 640px;
     background: url('../img/default-placeholder.JPG') center center / cover no-repeat;
     position: relative;
     border-radius: 15px;
@@ -854,8 +881,8 @@ html, body {
 
 #video-stream {
     border: 1px solid black;
-    width: 640px;
-    height: 480px;
+    width: 840px;
+    height: 640px;
     margin: auto;
     position: relative;
     border-radius: 15px; /* 設置邊角的圓角半徑 */
@@ -962,7 +989,7 @@ canvas {
     cursor: pointer;
     border: none;
     border-radius: 30px; /* 更圓滑的圓角 */
-    background: linear-gradient(135deg, #232856, #656469); /* 漸變背景 */
+    background: linear-gradient(135deg, #547f4f, #2c904a); /* 漸變背景 */
     color: #fff; /* 白色文字 */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* 添加陰影 */
     transition: all 0.3s ease; /* 平滑的變化效果 */
@@ -970,7 +997,7 @@ canvas {
 }
 
 .button-group button:hover {
-    background: linear-gradient(135deg, #656469, #232856); /* 反向漸變效果 */
+    background: linear-gradient(135deg, #2c904a, #547f4f); /* 反向漸變效果 */
     transform: scale(1.05); /* 輕微放大效果 */
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* 增強陰影效果 */
 }
@@ -1142,7 +1169,7 @@ canvas {
 /* Section: Map Feature */
 .section-map-feature {
     padding-top: 20px;
-    /* background: #071021 url(../img/map.png) no-repeat top center / cover;  */
+    background: #071021 url(../img/background2.png) no-repeat top center / cover; 
 }
 
 .section-map-feature h2 {
