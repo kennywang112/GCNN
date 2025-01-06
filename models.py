@@ -159,43 +159,27 @@ class Net_ResNet18(nn.Module):
 
     def forward(self, x, edge_index, edge_weight, batch, image_features):
 
-        # if x is not None and edge_index is not None and edge_index.numel() > 0:
-        #     x = self.conv1(x, edge_index, edge_weight=edge_weight)
-        #     x = F.relu(x)
-        #     x = self.conv2(x, edge_index, edge_weight=edge_weight)
-        #     x = F.relu(x)
-        #     x = self.conv3(x, edge_index, edge_weight=edge_weight)
-        #     x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
+        if x is not None and edge_index is not None and edge_index.numel() > 0:
+            x = self.conv1(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv2(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv3(x, edge_index, edge_weight=edge_weight)
+            x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
-        #     resnet_features = self.resnet(image_features) # [batch_size, 512]
+            resnet_features = self.resnet(image_features) # [batch_size, 512]
 
-        #     combined_features = torch.cat([x, resnet_features], dim=1)  
-        #     GNN_output = self.fc_layers(combined_features)
+            combined_features = torch.cat([x, resnet_features], dim=1)  
+            GNN_output = self.fc_layers(combined_features)
 
-        #     only_resnet_output = self.fc_only_resnet(resnet_features)
+            only_resnet_output = self.fc_only_resnet(resnet_features)
 
-        #     return GNN_output, only_resnet_output
+            return GNN_output, only_resnet_output
 
-        # else:
-        #     resnet_features = self.resnet(image_features)
-        #     return None, self.fc_only_resnet(resnet_features)
+        else:
+            resnet_features = self.resnet(image_features)
+            return None, self.fc_only_resnet(resnet_features)
 
-        x = self.conv1(x, edge_index, edge_weight=edge_weight)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index, edge_weight=edge_weight)
-        x = F.relu(x)
-        x = self.conv3(x, edge_index, edge_weight=edge_weight)
-        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
-
-        resnet_features = self.resnet(image_features) # [batch_size, 512]
-
-        combined_features = torch.cat([x, resnet_features], dim=1)  
-        GNN_output = self.fc_layers(combined_features)
-
-        only_resnet_output = self.fc_only_resnet(resnet_features)
-
-        return GNN_output, only_resnet_output
-        
 class AlexNet_Only(nn.Module):
     def __init__(self, num_classes=7):
         super(AlexNet_Only, self).__init__()
@@ -308,3 +292,187 @@ class NetWrapper(nn.Module):
         _, only_alex_output = self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)
         return only_alex_output
         # return self.model(None, self.edge_index, self.edge_weight, self.batch, image_features)
+
+class EfficientNet_Only(nn.Module):
+    def __init__(self, num_classes=7):
+        super(EfficientNet_Only, self).__init__()
+
+        # 載入預訓練的 EfficientNet-B0
+        self.efficientnet = models.efficientnet_b0(pretrained=True)
+
+        # 提取特徵維度
+        efficientnet_output_dim = self.efficientnet.classifier[1].in_features
+
+        # 修改分類層
+        self.efficientnet.classifier = nn.Identity()  # 移除原分類層
+
+        # 自定義全連接層
+        self.fc = nn.Sequential(
+            nn.Linear(efficientnet_output_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, num_classes)
+        )
+
+    def forward(self, x):
+        """
+        x: (N, 3, 224, 224) - 輸入圖像
+        """
+        # 利用 EfficientNet 抽取特徵
+        features = self.efficientnet(x)  # [N, efficientnet_output_dim]
+        # 經過自定義的分類層
+        out = self.fc(features)          # [N, num_classes]
+        return out
+
+class Net_EfficientNet(nn.Module):
+    def __init__(self, num_node_features, hidden_channels):
+        super(Net_EfficientNet, self).__init__()
+        self.conv1 = GCNConv(num_node_features, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+
+        # Pretrained EfficientNet-B0 model
+        self.efficientnet = models.efficientnet_b0(pretrained=True)
+
+        # 提取特徵維度
+        efficientnet_output_dim = self.efficientnet.classifier[1].in_features
+
+        # 修改分類層
+        self.efficientnet.classifier = nn.Identity()  # 移除原分類層
+
+        self.fc_layers = nn.Sequential(
+            nn.Linear(hidden_channels + efficientnet_output_dim, 256),  # Combine GCN and EfficientNet embeddings
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, 7)  # 7 classes
+        )
+
+        self.fc_only_efficientnet = nn.Sequential(
+            nn.Linear(efficientnet_output_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, 7)
+        )
+
+    def forward(self, x, edge_index, edge_weight, batch, image_features):
+
+        if x is not None and edge_index is not None and edge_index.numel() > 0:
+            # GCN component
+            x = self.conv1(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv2(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv3(x, edge_index, edge_weight=edge_weight)
+            x = global_mean_pool(x, batch)
+
+            # Combine GCN and EfficientNet features
+            x = torch.cat([x, self.efficientnet(image_features)], dim=1)
+            GNN_output = self.fc_layers(x)
+
+            # Only use EfficientNet features
+            x = self.efficientnet(image_features)
+            return GNN_output, self.fc_only_efficientnet(x)
+        else:
+            x = self.efficientnet(image_features)
+            return None, self.fc_only_efficientnet(x)
+        
+class GoogleNet_Only(nn.Module):
+    def __init__(self, num_classes=7):
+        super(GoogleNet_Only, self).__init__()
+
+        # Pretrained GoogLeNet model
+        self.googlenet = models.googlenet(pretrained=True, aux_logits=True)
+
+        # 提取特徵維度
+        googlenet_output_dim = self.googlenet.fc.in_features
+
+        # 修改分類層
+        self.googlenet.fc = nn.Identity()  # 移除原分類層
+
+        # 自定義全連接層
+        self.fc = nn.Sequential(
+            nn.Linear(googlenet_output_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, num_classes)
+        )
+
+    def forward(self, x):
+        """
+        x: (N, 3, 224, 224) - 輸入圖像
+        """
+        # 利用 GoogLeNet 抽取特徵
+        features = self.googlenet(x)   # [N, googlenet_output_dim]
+        # 經過自定義的分類層
+        out = self.fc(features)       # [N, num_classes]
+        return out
+
+class Net_GoogleNet(nn.Module):
+    def __init__(self, num_node_features, hidden_channels):
+        super(Net_GoogleNet, self).__init__()
+        self.conv1 = GCNConv(num_node_features, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+
+        # Pretrained GoogLeNet model
+        self.googlenet = models.googlenet(pretrained=True, aux_logits=True)
+
+        # 提取特徵維度
+        googlenet_output_dim = self.googlenet.fc.in_features
+
+        # 修改分類層
+        self.googlenet.fc = nn.Identity()  # 移除原分類層
+
+        self.fc_layers = nn.Sequential(
+            nn.Linear(hidden_channels + googlenet_output_dim, 256),  # Combine GCN and GoogLeNet embeddings
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, 7)  # 7 classes
+        )
+
+        self.fc_only_googlenet = nn.Sequential(
+            nn.Linear(googlenet_output_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(64, 7)
+        )
+
+    def forward(self, x, edge_index, edge_weight, batch, image_features):
+
+        if x is not None and edge_index is not None and edge_index.numel() > 0:
+            # GNN component
+            x = self.conv1(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv2(x, edge_index, edge_weight=edge_weight)
+            x = F.relu(x)
+            x = self.conv3(x, edge_index, edge_weight=edge_weight)
+            x = global_mean_pool(x, batch)
+
+            # Combine GCN and GoogLeNet features
+            x = torch.cat([x, self.googlenet(image_features)], dim=1)
+            GNN_output = self.fc_layers(x)
+
+            # Only use GoogLeNet features
+            x = self.googlenet(image_features)
+            return GNN_output, self.fc_only_googlenet(x)
+        else:
+            x = self.googlenet(image_features)
+            return None, self.fc_only_googlenet(x)

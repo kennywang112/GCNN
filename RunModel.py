@@ -12,6 +12,8 @@ from utils.utils_preprocess import *
 from models import *
 
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+# experiment_name = "MyExperiment"  # 設定實驗名稱
+# mlflow.set_experiment(experiment_name)
 
 device = (
     "mps" 
@@ -47,9 +49,10 @@ hidden_channels = 64
 model_dict = get_model_list(device, num_node_features, hidden_channels)
 # model = Net_Alex(num_node_features, hidden_channels).to(device)
 criterion = nn.CrossEntropyLoss()
-num_epochs = 25
+num_epochs = 20
 print('Start training ...')
 for i, (model_name, model) in enumerate(model_dict.items()):
+    print(model_name)
     params = {
     "model": model_name,
     "num_epochs": 25,
@@ -74,21 +77,37 @@ for i, (model_name, model) in enumerate(model_dict.items()):
 
                 optimizer.zero_grad()
 
-                GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
-                if GNN_output is not None:
-                    loss_GNN = criterion(GNN_output, batch_y)
-                    loss_AlexNet = criterion(CNN_output, batch_y)
-                    loss = (loss_GNN + loss_AlexNet) / 2
+                if model_name in ['model_alex_only', 'model_Restnet18_only', 'model_EfficientNet_Only', 
+                                  'model_VGG16_only', 'model_GoogleNet_Only']:
+                    # CNN only
+                    out = model(image_features)
+                    loss = criterion(out, batch_y)
                     loss.backward()
-                    _, pred = GNN_output.max(dim=1)
+                    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+                    optimizer.step()
+                    # scheduler.step()
+                    total_loss += loss.item()
+
+                    _, pred = out.max(dim=1)
                     correct += (pred == batch_y).sum().item()
-                else:
-                    loss = criterion(CNN_output, batch_y)
-                    loss.backward()
-                    _, pred = CNN_output.max(dim=1)
-                    correct += (pred == batch_y).sum().item()
-                optimizer.step()
-                total_loss += loss.item()
+                elif model_name in ['model_Net_Alex', 'model_Net_VGG', 'model_Net_Restnet', 
+                                    'model_Net_EfficientNet', 'model_Net_Google']:
+                    # GNN
+                    GNN_output, CNN_output = model(x, edge_index, edge_weight, batch.batch, image_features)
+                    if GNN_output is not None:
+                        loss_GNN = criterion(GNN_output, batch_y)
+                        loss_CNN = criterion(CNN_output, batch_y)
+                        loss = (loss_GNN + loss_CNN) / 2
+                        loss.backward()
+                        _, pred = GNN_output.max(dim=1)
+                        correct += (pred == batch_y).sum().item()
+                    else:
+                        loss = criterion(CNN_output, batch_y)
+                        loss.backward()
+                        _, pred = CNN_output.max(dim=1)
+                        correct += (pred == batch_y).sum().item()
+                    optimizer.step()
+                    total_loss += loss.item()
 
             train_loss = total_loss / len(train_loader)
             train_accuracy = correct / len(train_data)
@@ -108,21 +127,31 @@ for i, (model_name, model) in enumerate(model_dict.items()):
                     image_features = batch.image_features
                     batch_y = batch.y
 
-                    GNN_output, AlexNet_output = model(x, edge_index, edge_weight, batch.batch, image_features)
-                    if GNN_output is not None:
-                        loss_GNN = criterion(GNN_output, batch_y)
-                        loss_AlexNet = criterion(AlexNet_output, batch_y)
-                        loss = (loss_GNN + loss_AlexNet) / 2
-                        _, pred = GNN_output.max(dim=1)
-                        val_correct += (pred == batch_y).sum().item()
-                    else:
-                        loss = criterion(AlexNet_output, batch_y)
-                        _, pred = AlexNet_output.max(dim=1)
-                        val_correct += (pred == batch_y).sum().item()
-                    val_loss += loss.item()
+                    if model_name in ['model_alex_only', 'model_Restnet18_only', 'model_EfficientNet_Only', 
+                                      'model_VGG16_only', 'model_GoogleNet_Only']:
+                        # CNN only
+                        out = model(image_features)
+                        loss = criterion(out, batch_y)
+                        val_loss += loss.item()
 
-                    epoch_preds.extend(pred.cpu().numpy())
-                    epoch_labels.extend(batch_y.cpu().numpy())
+                        _, pred = out.max(dim=1)
+                        val_correct += (pred == batch_y).sum().item()
+                        # GNN
+                    elif model_name in ['model_Net_Alex', 'model_Net_VGG', 'model_Net_Restnet', 
+                                        'model_Net_EfficientNet', 'model_Net_Google']:
+                        GNN_output, AlexNet_output = model(x, edge_index, edge_weight, batch.batch, image_features)
+                        if GNN_output is not None:
+                            loss_GNN = criterion(GNN_output, batch_y)
+                            loss_CNN = criterion(AlexNet_output, batch_y)
+                            loss = (loss_GNN + loss_CNN) / 2
+                            _, pred = GNN_output.max(dim=1)
+                            val_correct += (pred == batch_y).sum().item()
+                        else:
+                            loss = criterion(AlexNet_output, batch_y)
+                            _, pred = AlexNet_output.max(dim=1)
+                            val_correct += (pred == batch_y).sum().item()
+                        val_loss += loss.item()
+                    
             avg_val_loss = val_loss / len(val_loader)
             val_accuracy = val_correct / len(val_data)
             mlflow.log_metric('train_loss', train_loss, step=epoch)
