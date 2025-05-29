@@ -7,10 +7,10 @@ os.makedirs(model_dir, exist_ok=True)
 
 # Google Drive 文件ID與文件名的對應
 files = {
-    "1ytHjZpCYpw0y9scXSMkmXVAPdmJ7GRRC": "face_landmarker.task",
-    "1JufgIIjoMIJ1PCx3WaYLa3MrTn12iAi9": "model_Net_Resnet.pth",
-    "1P3vMy4c3bQP0_UHLE_kuVLu87PGTN2t2": "model_Net_Alex.pth",
-    "1wOT6_aHLounU6o9aLA0YO7VynHQbBDjt": "model_Net_VGG.pth"
+    "1tIgKRb0JKKsWIq5T9fCpi07gKyo6dZwk": "face_landmarker.task",
+    "1ax7lpgQjR9-csF8r2UBfNJfQ_RNzYcdS": "model_Net_Resnet.pth",
+    "1czfZ49ldTj-zmOTs58Ds_3zrTOepVTD5": "model_Net_Alex.pth",
+    "16g4yipf3j06JfatYPhXXxpLcP1zMERFb": "model_Net_VGG.pth"
 }
 # 循環下載每個模型
 for file_id, file_name in files.items():
