@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import mediapipe as mp
 import torchvision.transforms as transforms
+from azure.cosmos import CosmosClient, PartitionKey
+
 device = (
     "mps" 
     if torch.backends.mps.is_available() 
@@ -72,3 +74,26 @@ def visualize_adjacency_matrix(image, adjacency_matrix, face_landmarks, w, h):
         cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
     
     return matrix_vis
+
+def upload_emotion_log_to_cosmos(df, endpoint, key, database_name, container_name):
+
+    # client = CosmosClient(endpoint, key)
+
+    # database = client.create_database_if_not_exists(id=database_name)
+
+    # container = database.create_container_if_not_exists(
+    #     id=container_name,
+    #     partition_key=PartitionKey(path="/id"), 
+    #     offer_throughput=400
+    # )
+
+    for _, row in df.iterrows():
+        item = {
+            'id': str(row['id']),
+            'face': row['face']
+        }
+        try:
+            # response = container.create_item(body=item)
+            print(f"成功上傳: {item}")
+        except Exception as e:
+            print(f"上傳失敗: {item}，錯誤: {e}")

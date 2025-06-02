@@ -8,7 +8,7 @@ import pandas as pd
 from PIL import Image
 import mediapipe as mp
 from models import Net_Alex, Net_ResNet18, Net_VGG, NetWrapper
-from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
+from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix, upload_emotion_log_to_cosmos
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
@@ -16,6 +16,16 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+endpoint = os.getenv('AZURE_COSMOS_ENDPOINT')
+key = os.getenv('AZURE_COSMOS_KEY')
+database_name = os.getenv('AZURE_COSMOS_DATABASE')
+container_name = os.getenv('AZURE_COSMOS_CONTAINER')
 
 app = Flask(__name__)
 
@@ -73,14 +83,9 @@ options = FaceLandmarkerOptions(
     running_mode=VisionRunningMode.IMAGE
 )
 
-# if not camera.isOpened():
-#     print("Warning: Camera not available. The application will still run.")
-#     camera_active = False
-# else:
-#     camera_active = True
 camera_active = False
 
-display_visualization = False  # 用於控制是否顯示視覺化
+display_visualization = False
 latest_probabilities = None
 visualization_bgr = None
 latest_detection = None
@@ -94,9 +99,14 @@ transform = transforms.Compose([
 
 def generate_frames():
     global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr, camera, frame
-    print(f"Display Visualization: {display_visualization}") 
-    last_detection_time = 0  # 初始化上一次檢測的時間
-    detection_interval = 0.2   # 設定檢測間隔為 2 秒
+    print(f"Display Visualization: {display_visualization}")
+
+    # 檢測時間和間隔
+    last_detection_time = 0
+    detection_interval = 1
+    # 上庫時間和間隔
+    last_upload_time = 0
+    upload_interval = 1
 
     with FaceLandmarker.create_from_options(options) as landmarker:
         while True:
@@ -151,12 +161,21 @@ def generate_frames():
                                     class_name = label_map[idx]
 
                 # 使用最新檢測結果繪製
-                if latest_detection is not None:
+                if latest_detection is not None and (current_time - last_upload_time) >= upload_interval:
+                    last_upload_time = current_time
+
                     face_landmarks = latest_detection['face_landmarks']
                     x_min, y_min = latest_detection['x_min'], latest_detection['y_min']
                     x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
 
                     predicted_label = label_map[pred]
+
+                    single_log = pd.DataFrame([{
+                        "id": str(last_detection_time),
+                        "face": predicted_label
+                    }])
+
+                    upload_emotion_log_to_cosmos(single_log, endpoint, key, database_name, container_name)
 
                     print(f"Predicted emotion: {predicted_label}")
 
@@ -169,14 +188,9 @@ def generate_frames():
                         matrix_vis = visualize_adjacency_matrix(frame, adjacency_matrix, face_landmarks, w, h)
                         matrix_h, matrix_w = matrix_vis.shape[:2]
                         frame[0:matrix_h, 0:matrix_w] = matrix_vis
-                        # cv2.putText(frame, "Visualization ON", (10, 30),
-                        #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                 # 將幀編碼並返回
                 _, buffer = cv2.imencode('.jpg', frame)
-                # frame = buffer.tobytes()
-                # yield (b'--frame\r\n'
-                #        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
