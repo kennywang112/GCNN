@@ -157,6 +157,9 @@ def generate_frames():
                     x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
 
                     predicted_label = label_map[pred]
+
+                    print(f"Predicted emotion: {predicted_label}")
+
                     cv2.putText(frame, f"Emotion: {predicted_label}",
                                 (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX,
                                 0.9, (0, 255, 0), 2)
@@ -171,9 +174,12 @@ def generate_frames():
 
                 # 將幀編碼並返回
                 _, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
+                # frame = buffer.tobytes()
+                # yield (b'--frame\r\n'
+                #        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             else:
                 time.sleep(0.1)
 
