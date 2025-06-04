@@ -8,7 +8,7 @@ import pandas as pd
 from PIL import Image
 import mediapipe as mp
 from models import Net_Alex, Net_ResNet18, Net_VGG, NetWrapper
-from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
+from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix, upload_emotion_log_to_cosmos
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
@@ -17,8 +17,17 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
+from dotenv import load_dotenv
 import base64
 import threading
+
+load_dotenv()
+
+endpoint = os.getenv('AZURE_COSMOS_ENDPOINT')
+key = os.getenv('AZURE_COSMOS_KEY')
+database_name = os.getenv('AZURE_COSMOS_DATABASE')
+container_name = os.getenv('AZURE_COSMOS_CONTAINER')
+
 state_lock = threading.Lock()
 
 state = {
@@ -52,6 +61,7 @@ label_map = {
 hidden_channels=64
 num_node_features=21
 
+# Azure空間問題暫時不載入其他模型
 # model_alexnet_gnn = Net_Alex(num_node_features, hidden_channels)
 # model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
 # model_alexnet_gnn.eval()
@@ -361,6 +371,41 @@ def get_model_performance():
     }
     df = pd.DataFrame(data)
     return jsonify(df.to_dict(orient='records'))
+
+last_upload_time = 0
+upload_interval = 5  # 每5秒上傳一次，你可以改秒數
+upload_thread_running = True
+
+def background_upload_thread():
+    global last_upload_time
+    while upload_thread_running:
+        time.sleep(1)  # 每1秒檢查一次
+        with state_lock:
+            predicted_label = state["predicted_label"]
+        if predicted_label and (time.time() - last_upload_time) >= upload_interval:
+            single_log = pd.DataFrame([{
+                "id": str(int(time.time() * 1000)),  # 以時間戳記當ID
+                "face": predicted_label
+            }])
+            try:
+                upload_emotion_log_to_cosmos(single_log, endpoint, key, database_name, container_name)
+                print(f"[UPLOAD] Uploaded to CosmosDB: {predicted_label}")
+                last_upload_time = time.time()
+            except Exception as e:
+                print(f"[ERROR] Failed to upload to CosmosDB: {e}")
+
+# 啟動 Background Thread
+upload_thread = threading.Thread(target=background_upload_thread, daemon=True)
+upload_thread.start()
+
+# 程式結束時關掉 Thread
+import atexit
+def cleanup():
+    global upload_thread_running
+    upload_thread_running = False
+    print("Shutting down background upload thread...")
+
+atexit.register(cleanup)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))

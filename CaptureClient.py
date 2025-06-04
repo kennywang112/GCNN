@@ -1,7 +1,7 @@
 import os, cv2, time, requests
 
 # ─── 環境參數 ───
-SERVER   = os.getenv("SERVER_URL",  "http://172.20.10.11:8080")
+SERVER   = os.getenv("SERVER_URL",  "http://127.0.0.1:8080")
 TOKEN    = os.getenv("INGEST_TOKEN", "changeme")
 CAM_ID   = int(os.getenv("CAM_ID", 0))        # 通常第一隻鏡頭就是 0
 INTERVAL = float(os.getenv("INTERVAL", 0.04))  # 25 fps
