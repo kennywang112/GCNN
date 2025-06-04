@@ -23,6 +23,13 @@ Frontend template: [free css/html template](https://www.free-css.com/free-css-te
     </a>
 </div>
 
+## Docker & Azure
+```
+docker login yourrigistryname.azurecr.io
+docker image build -t yourrigistryname.azurecr.io/yourresourcegroup:latest .
+docker image push kennywang.azurecr.io/gcnn:latest
+```
+
 ## Other
 UMAP.py provides a lower-dimensional view of the model.
 
