@@ -1,5 +1,5 @@
 from flask import Flask, Response, render_template, jsonify, send_file, make_response, request
-
+import traceback
 import os
 import cv2
 import time
@@ -8,7 +8,7 @@ import pandas as pd
 from PIL import Image
 import mediapipe as mp
 from models import Net_Alex, Net_ResNet18, Net_VGG, NetWrapper
-from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix, upload_emotion_log_to_cosmos
+from utils.utils_app import get_adjacency_matrix, process_for_model, visualize_adjacency_matrix
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
@@ -17,15 +17,18 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from dotenv import load_dotenv
-import os
+import base64
+import threading
+state_lock = threading.Lock()
 
-load_dotenv()
-
-endpoint = os.getenv('AZURE_COSMOS_ENDPOINT')
-key = os.getenv('AZURE_COSMOS_KEY')
-database_name = os.getenv('AZURE_COSMOS_DATABASE')
-container_name = os.getenv('AZURE_COSMOS_CONTAINER')
+state = {
+    "frame_vis": None,          # 給 /video_feed 串流
+    "latest_prob": None,        # list[float] 0–1
+    "predicted_label": None,    # str
+    "latest_detection": None,   # {'face_landmarks': lm, 'bbox': (x0,y0,x1,y1)}
+    "last_face_roi": None,      # numpy array (BGR) for Grad-CAM
+    "grad_cam_vis": None        # numpy array (BGR) 最後一次產生的 Grad-CAM
+}
 
 app = Flask(__name__)
 
@@ -49,20 +52,23 @@ label_map = {
 hidden_channels=64
 num_node_features=21
 
-model_alexnet_gnn = Net_Alex(num_node_features, hidden_channels)
-model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
-model_alexnet_gnn.eval()
-model_alexnet_gnn.to(device)
+# model_alexnet_gnn = Net_Alex(num_node_features, hidden_channels)
+# model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
+# model_alexnet_gnn.eval()
+# model_alexnet_gnn.to(device)
 
-model_resnet_gnn = Net_ResNet18(num_node_features, hidden_channels)
-model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Resnet.pth', map_location=torch.device(device)))
-model_resnet_gnn.eval()
-model_resnet_gnn.to(device)
+# model_resnet_gnn = Net_ResNet18(num_node_features, hidden_channels)
+# model_resnet_gnn.load_state_dict(torch.load('./model/model_Net_Resnet.pth', map_location=torch.device(device)))
+# model_resnet_gnn.eval()z
+# model_resnet_gnn.to(device)
 
 model_vgg_gnn = Net_VGG(num_node_features, hidden_channels)
 model_vgg_gnn.load_state_dict(torch.load('./model/model_Net_VGG.pth', map_location=torch.device(device)))
 model_vgg_gnn.eval()
 model_vgg_gnn.to(device)
+
+model_alexnet_gnn = None
+model_resnet_gnn = None
 
 # Available models
 target_layers_map = {
@@ -70,8 +76,8 @@ target_layers_map = {
     "resnet18_gnn": model_resnet_gnn,
     "vgg16_gnn": model_vgg_gnn
 }
-current_model_name = "alexnet_gnn"
-current_model = model_alexnet_gnn
+current_model_name = "vgg16_gnn"
+current_model = model_vgg_gnn
 
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker
@@ -83,9 +89,16 @@ options = FaceLandmarkerOptions(
     running_mode=VisionRunningMode.IMAGE
 )
 
-camera_active = False
+# if not camera.isOpened():
+#     print("Warning: Camera not available. The application will still run.")
+#     camera_active = False
+# else:
+#     camera_active = True
 
-display_visualization = False
+camera_active = False
+frame = None         # ← 最新影格會存這裡
+INGEST_TOKEN = os.getenv("INGEST_TOKEN", "changeme")   # ← 新增權杖
+display_visualization = False  # 用於控制是否顯示視覺化
 latest_probabilities = None
 visualization_bgr = None
 latest_detection = None
@@ -97,109 +110,91 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+landmarker = FaceLandmarker.create_from_options(options)
+import atexit, sys, traceback
+atexit.register(landmarker.close)
+
+@app.route("/upload_frame", methods=["POST"])
+def upload_frame():
+    try:
+        # 1. 讀取並解碼
+        img_bytes = request.get_data()
+        img = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+        if img is None:
+            return "Bad image", 400
+
+        h, w = img.shape[:2]
+        mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=img)
+        detection_result = landmarker.detect(mp_img)
+
+        if not detection_result.face_landmarks:
+            return jsonify({"error": "No face detected"}), 400
+
+        # 2. 取第一張臉，計算 ROI
+        lm  = detection_result.face_landmarks[0]
+        pts = np.array([(p.x*w, p.y*h) for p in lm])
+        x0, y0 = pts.min(axis=0).astype(int) - 20
+        x1, y1 = pts.max(axis=0).astype(int) + 20
+        x0, y0 = np.clip([x0, y0], 0, [w, h])
+        x1, y1 = np.clip([x1, y1], 0, [w, h])
+        roi = img[y0:y1, x0:x1]
+
+        # 3. 前處理 + 推論
+        A, X = get_adjacency_matrix(lm)
+        x, ei, ew, batch, img_tensor = process_for_model(roi, A, X)
+
+        with torch.no_grad():
+            out    = current_model(x, ei, ew, batch, img_tensor)
+            logits = out[0] if isinstance(out, (tuple, list)) else out
+            probs  = torch.softmax(logits, dim=1).squeeze()   # Tensor
+            pred   = int(torch.argmax(probs).item())
+            label  = label_map[pred]
+            probs  = probs.cpu().tolist()                     # → list[float]
+
+        # 4. 畫框＋文字
+        vis = img.copy()
+        cv2.rectangle(vis, (x0, y0), (x1, y1), (0, 255, 0), 2)
+        cv2.putText(vis, label, (x0, y0 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        # 5. 寫入全域 state
+        with state_lock:
+            state["frame_vis"]        = vis
+            state["latest_prob"]      = probs
+            state["predicted_label"]  = label
+            state["latest_detection"] = {"face_landmarks": lm,
+                                         "bbox": (x0, y0, x1, y1)}
+            state["last_face_roi"]    = roi.copy()
+
+        prob_out = [{"label": label_map[i], "probability": round(p*100, 2)}
+                    for i, p in enumerate(probs)]
+        return jsonify({"predicted_label": label,
+                        "probabilities": prob_out})
+
+    except Exception as e:
+        import sys, traceback
+        traceback.print_exc(file=sys.stderr)
+        return jsonify({"error": str(e)}), 500
+
+
+
 def generate_frames():
-    global camera_active, display_visualization, latest_probabilities, latest_detection, visualization_bgr, camera, frame
-    print(f"Display Visualization: {display_visualization}")
+    """僅串流 state['frame_vis']，不再重跑推論"""
+    while True:
+        with state_lock:
+            frame_vis = state["frame_vis"]
+        if frame_vis is None:
+            time.sleep(0.05)
+            continue
 
-    # 檢測時間和間隔
-    last_detection_time = 0
-    detection_interval = 1
-    # 上庫時間和間隔
-    last_upload_time = 0
-    upload_interval = 1
-
-    with FaceLandmarker.create_from_options(options) as landmarker:
-        while True:
-            if camera_active:
-                success, frame = camera.read()
-                if not success:
-                    break
-
-                frame = cv2.flip(frame, 1)
-                h, w, c = frame.shape
-
-                # 獲取當前時間
-                current_time = time.time()
-
-                # 判斷是否到達檢測間隔
-                if current_time - last_detection_time >= detection_interval:
-                    last_detection_time = current_time  # 更新上一次檢測時間
-
-                    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
-                    detection_result = landmarker.detect(mp_image)
-
-                    if detection_result.face_landmarks:
-                        for face_landmarks in detection_result.face_landmarks:
-                            face_points = np.array([(lm.x * w, lm.y * h) for lm in face_landmarks])
-                            x_min, y_min = np.min(face_points, axis=0)
-                            x_max, y_max = np.max(face_points, axis=0)
-                            padding = 20
-                            x_min, y_min = max(0, int(x_min) - padding), max(0, int(y_min) - padding)
-                            x_max, y_max = min(w, int(x_max) + padding), min(h, int(y_max) + padding)
-
-                            # 更新全局檢測結果
-                            latest_detection = {
-                                'face_landmarks': face_landmarks,
-                                'x_min': x_min, 'y_min': y_min,
-                                'x_max': x_max, 'y_max': y_max,
-                            }
-
-                            face_roi = frame[y_min:y_max, x_min:x_max]
-                            adjacency_matrix, node_features = get_adjacency_matrix(face_landmarks)
-                            x, edge_index, edge_weight, batch, image_tensor = process_for_model(
-                                face_roi, adjacency_matrix, node_features
-                            )
-
-                            with torch.no_grad():
-                                out = current_model(x, edge_index, edge_weight, batch, image_tensor)
-                                logits = out[0] if isinstance(out, tuple) else out 
-                                probabilities = F.softmax(logits, dim=1)  # dim=1 表示按類別進行操作
-                                latest_probabilities = probabilities.squeeze().tolist()  # 更新全局變量
-                                pred = logits.max(dim=1)[1].item()
-                                
-                                for idx, prob in enumerate(latest_probabilities):
-                                    class_name = label_map[idx]
-
-                # 使用最新檢測結果繪製
-                if latest_detection is not None and (current_time - last_upload_time) >= upload_interval:
-                    last_upload_time = current_time
-
-                    face_landmarks = latest_detection['face_landmarks']
-                    x_min, y_min = latest_detection['x_min'], latest_detection['y_min']
-                    x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
-
-                    predicted_label = label_map[pred]
-
-                    single_log = pd.DataFrame([{
-                        "id": str(last_detection_time),
-                        "face": predicted_label
-                    }])
-
-                    upload_emotion_log_to_cosmos(single_log, endpoint, key, database_name, container_name)
-
-                    print(f"Predicted emotion: {predicted_label}")
-
-                    cv2.putText(frame, f"Emotion: {predicted_label}",
-                                (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                                0.9, (0, 255, 0), 2)
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-
-                    if display_visualization:
-                        matrix_vis = visualize_adjacency_matrix(frame, adjacency_matrix, face_landmarks, w, h)
-                        matrix_h, matrix_w = matrix_vis.shape[:2]
-                        frame[0:matrix_h, 0:matrix_w] = matrix_vis
-
-                # 將幀編碼並返回
-                _, buffer = cv2.imencode('.jpg', frame)
-                frame_bytes = buffer.tobytes()
-                yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-            else:
-                time.sleep(0.1)
-
+        _, buffer = cv2.imencode('.jpg', frame_vis)
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
+               + buffer.tobytes() + b'\r\n')
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
 
 @app.route('/switch_model', methods=['POST'])
 def switch_model():
@@ -225,16 +220,7 @@ def video_feed():
 
 @app.route('/toggle_camera', methods=['POST'])
 def toggle_camera():
-    global camera_active, camera
-    if not camera_active:
-        if camera is None or not camera.isOpened():
-            camera = cv2.VideoCapture(0)
-            if not camera.isOpened():
-                return jsonify({'error': 'Unable to access the camera'}), 500
-    else:
-        if camera and camera.isOpened():
-            camera.release()
-            camera = None
+    global camera_active
     camera_active = not camera_active
     return jsonify({'camera_active': camera_active})
 
@@ -247,79 +233,65 @@ def toggle_visualization():
 
 @app.route('/get_probabilities', methods=['GET'])
 def get_probabilities():
-    global latest_probabilities
-    if latest_probabilities is None:
+    with state_lock:
+        probs = state["latest_prob"]
+    if probs is None:
         return jsonify({'error': 'No probabilities available yet'}), 400
 
-    probabilities_with_labels = [
-        {"label": label_map[idx], "probability": prob * 100}
-        for idx, prob in enumerate(latest_probabilities)
-    ]
-    return jsonify({'probabilities': probabilities_with_labels})
-
+    data = [{"label": label_map[i], "probability": p*100} for i, p in enumerate(probs)]
+    return jsonify({'probabilities': data})
+    
 @app.route('/generate_grad_cam', methods=['POST'])
 def generate_grad_cam():
-    global current_model, latest_detection, visualization_bgr, frame
-
-    if latest_detection is None:
-        return jsonify({'error': 'No face detected'}), 400
-
     try:
-        face_landmarks = latest_detection['face_landmarks']
-        x_min, y_min = latest_detection['x_min'], latest_detection['y_min']
-        x_max, y_max = latest_detection['x_max'], latest_detection['y_max']
+        with state_lock:
+            det  = state["latest_detection"]
+            roi  = state["last_face_roi"]
 
-        face_roi = frame[y_min:y_max, x_min:x_max]
+        if det is None or roi is None:
+            return jsonify({'error': 'No face detected yet'}), 400
 
-        if face_roi.size == 0:
-            return jsonify({'error': 'Invalid face region'}), 400
+        lm = det['face_landmarks']
+        A, X = get_adjacency_matrix(lm)
+        x, ei, ew, batch, img_tensor = process_for_model(roi, A, X)
 
-        adjacency_matrix, node_features = get_adjacency_matrix(face_landmarks)
-        x, edge_index, edge_weight, batch, image_tensor = process_for_model(
-            face_roi, adjacency_matrix, node_features
-        )
+        rgb = cv2.resize(roi, (224, 224)) / 255.0
+        rgb = rgb.astype(np.float32)
+        input_tensor = transform(Image.fromarray(
+            cv2.cvtColor((rgb*255).astype(np.uint8), cv2.COLOR_BGR2RGB)
+        )).unsqueeze(0).to(device)
 
-        rgb_img = cv2.resize(face_roi, (224, 224)) / 255.0
-        rgb_img = rgb_img.astype(np.float32)
-        rgb_img_pil = Image.fromarray(cv2.cvtColor((rgb_img * 255).astype(np.uint8), cv2.COLOR_BGR2RGB))
-
-        input_tensor = transform(rgb_img_pil).unsqueeze(0).to(device)
-
-        mean = torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1)
-        std = torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1)
-        input_tensor = input_tensor * std + mean
-
-        wrapped_model = NetWrapper(current_model, edge_index, edge_weight, batch)
-        print(current_model_name)
+        wrapped = NetWrapper(current_model, ei, ew, batch)
         if current_model_name == 'alexnet_gnn':
-            target_layers = [wrapped_model.model.alexnet.features[-1]]
+            layers = [wrapped.model.alexnet.features[-1]]
         elif current_model_name == 'resnet18_gnn':
-            target_layers = [wrapped_model.model.resnet.layer4[-1]]
-        elif current_model_name == 'vgg16_gnn':
-            target_layers = [wrapped_model.model.vgg16.features[-1]]
+            layers = [wrapped.model.resnet.layer4[-1]]
+        else:  # vgg16_gnn
+            layers = [wrapped.model.vgg16.features[-1]]
 
-        cam = GradCAM(model=wrapped_model, target_layers=target_layers)
-        grayscale_cam = cam(input_tensor=input_tensor)
+        cam = GradCAM(model=wrapped, target_layers=layers)
+        grayscale_cam = cam(input_tensor=input_tensor)[0]
 
-        base_image_resized = cv2.resize(face_roi, (224, 224)) / 255.0
-        visualization = show_cam_on_image(base_image_resized, grayscale_cam[0, :], use_rgb=True)
-        # visualization = show_cam_on_image(rgb_img, grayscale_cam[0, :], use_rgb=True)
-        visualization_bgr = (visualization * 255).astype(np.uint8)
+        vis = show_cam_on_image(rgb, grayscale_cam, use_rgb=True)
+        vis_bgr = (vis * 255).astype(np.uint8)
 
-        return jsonify({'message': 'Grad-CAM generated successfully'})
+        with state_lock:
+            state["grad_cam_vis"] = vis_bgr
+
+        return jsonify({'message': 'Grad-CAM generated'})
     except Exception as e:
-        print(f"Error generating Grad-CAM: {e}")
-        return jsonify({'error': f'Failed to generate Grad-CAM: {str(e)}'}), 500
+        import sys, traceback
+        traceback.print_exc(file=sys.stderr)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/grad_cam_feed')
 def grad_cam_feed():
-    global visualization_bgr
-    if visualization_bgr is None:
+    with state_lock:
+        vis = state["grad_cam_vis"]
+    if vis is None:
         return "No Grad-CAM available", 404
-    _, buffer = cv2.imencode('.jpg', visualization_bgr)
-    response = make_response(buffer.tobytes())
-    response.headers['Content-Type'] = 'image/jpeg'
-    return response
+    _, buf = cv2.imencode('.jpg', vis)
+    return Response(buf.tobytes(), mimetype='image/jpeg')
 
 file_path_train_acc = './mlflow/train_accuracy.csv'
 file_path_train_loss = './mlflow/train_loss.csv'
@@ -392,4 +364,4 @@ def get_model_performance():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)

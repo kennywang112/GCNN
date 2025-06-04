@@ -1,3 +1,4 @@
+
 function startVideoFeed() {
     const videoStream = document.getElementById('video-stream');
     videoStream.src = '/video_feed';
@@ -85,7 +86,7 @@ function updateProbabilities() {
         .catch(error => console.error('Error fetching probabilities:', error));
 }
 
-let currentModel = "alexnet_gnn";
+let currentModel = "vgg16_gnn";
 
 function switchModel(model) {
     fetch('/switch_model', {
@@ -93,17 +94,17 @@ function switchModel(model) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: model })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message); 
-            currentModel = model;
-            updateCurrentModelDisplay(); 
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => console.error('Error switching model:', error));
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                currentModel = model;
+                updateCurrentModelDisplay();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error switching model:', error));
 }
 
 function updateCurrentModelDisplay() {

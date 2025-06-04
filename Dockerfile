@@ -1,29 +1,37 @@
-# 建立執行環境
-FROM --platform=linux/amd64 python:3.9
 
+FROM --platform=linux/amd64 python:3.9-slim
 
-# 更新Linux指令
-RUN apt update
-RUN apt-get install -y libgl1
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libgl1 libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
 
-# 建立工作資料夾，放置程式
 WORKDIR /app
 
+COPY requirements.txt  ./
+COPY Download.py       ./
+COPY load_model.py     ./
+COPY app.py            ./
+COPY models.py         ./
+COPY face_landmarker.task ./
 
-COPY requirements.txt /app/
-COPY Download.py /app/
-COPY app.py /app/
-COPY models.py /app/
-COPY templates /app/templates/
-COPY mlflow /app/mlflow/
-COPY model/face_landmarker.task /app/model/
-COPY static /app/static/
-COPY utils/ /app/utils/
+COPY model   /app/model/
+COPY mlflow  /app/mlflow/
+
+COPY static     /app/static/
+COPY templates  /app/templates/
+COPY utils      /app/utils/
 
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN python Download.py
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+RUN python load_model.py
+
+ENV PORT=8080
+ENV INGEST_TOKEN=changeme  
 
 EXPOSE 8080
 
 ENTRYPOINT ["python", "app.py"]
+    
