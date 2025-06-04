@@ -23,10 +23,10 @@ import threading
 
 load_dotenv()
 
-endpoint = os.getenv('AZURE_COSMOS_ENDPOINT')
-key = os.getenv('AZURE_COSMOS_KEY')
-database_name = os.getenv('AZURE_COSMOS_DATABASE')
-container_name = os.getenv('AZURE_COSMOS_CONTAINER')
+endpoint = os.getenv('COSMOS_ENDPOINT')
+key = os.getenv('COSMOS_KEY')
+database_name = os.getenv('COSMOS_DATABASE')
+container_name = os.getenv('COSMOS_CONTAINER')
 
 state_lock = threading.Lock()
 
@@ -98,12 +98,6 @@ options = FaceLandmarkerOptions(
     base_options=BaseOptions(model_asset_path='./model/face_landmarker.task'),
     running_mode=VisionRunningMode.IMAGE
 )
-
-# if not camera.isOpened():
-#     print("Warning: Camera not available. The application will still run.")
-#     camera_active = False
-# else:
-#     camera_active = True
 
 camera_active = False
 frame = None         # ← 最新影格會存這裡

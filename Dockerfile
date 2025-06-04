@@ -10,11 +10,10 @@ WORKDIR /app
 
 COPY requirements.txt  ./
 COPY Download.py       ./
-COPY load_model.py     ./
+COPY LoadModel.py     ./
 COPY app.py            ./
 COPY models.py         ./
-COPY face_landmarker.task ./
-
+COPY .env              ./
 COPY model   /app/model/
 COPY mlflow  /app/mlflow/
 
@@ -26,10 +25,10 @@ COPY utils      /app/utils/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-RUN python load_model.py
+RUN python LoadModel.py
 
 ENV PORT=8080
-ENV INGEST_TOKEN=changeme  
+ENV INGEST_TOKEN=changeme
 
 EXPOSE 8080
 
