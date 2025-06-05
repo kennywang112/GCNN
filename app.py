@@ -17,16 +17,16 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from dotenv import load_dotenv
 import base64
 import threading
+from pathlib import Path
+from dotenv import load_dotenv
+import os
 
-load_dotenv()
 
-endpoint = os.getenv('COSMOS_ENDPOINT')
-key = os.getenv('COSMOS_KEY')
-database_name = os.getenv('COSMOS_DATABASE')
-container_name = os.getenv('COSMOS_CONTAINER')
+# endpoint = os.getenv('COSMOS_ENDPOINT')
+# key = os.getenv('AZURE_COSMOS_KEY')
+
 
 state_lock = threading.Lock()
 
@@ -61,7 +61,6 @@ label_map = {
 hidden_channels=64
 num_node_features=21
 
-# Azure空間問題暫時不載入其他模型
 # model_alexnet_gnn = Net_Alex(num_node_features, hidden_channels)
 # model_alexnet_gnn.load_state_dict(torch.load('./model/model_Net_Alex.pth', map_location=torch.device(device)))
 # model_alexnet_gnn.eval()
@@ -98,6 +97,12 @@ options = FaceLandmarkerOptions(
     base_options=BaseOptions(model_asset_path='./model/face_landmarker.task'),
     running_mode=VisionRunningMode.IMAGE
 )
+
+# if not camera.isOpened():
+#     print("Warning: Camera not available. The application will still run.")
+#     camera_active = False
+# else:
+#     camera_active = True
 
 camera_active = False
 frame = None         # ← 最新影格會存這裡
@@ -369,6 +374,15 @@ def get_model_performance():
 last_upload_time = 0
 upload_interval = 5  # 每5秒上傳一次，你可以改秒數
 upload_thread_running = True
+env_path = Path(".env")
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=True)
+
+COSMOS_KEY = os.getenv('COSMOS_KEY')
+COSMOS_ENDPOINT = os.getenv('COSMOS_ENDPOINT')
+DATABASE = os.getenv('COSMOS_DATABASE')
+CONTAINERNAME = os.getenv('COSMOS_CONTAINER')
 
 def background_upload_thread():
     global last_upload_time
@@ -382,7 +396,7 @@ def background_upload_thread():
                 "face": predicted_label
             }])
             try:
-                upload_emotion_log_to_cosmos(single_log, endpoint, key, database_name, container_name)
+                upload_emotion_log_to_cosmos(single_log, COSMOS_ENDPOINT, COSMOS_KEY, DATABASE, CONTAINERNAME)
                 print(f"[UPLOAD] Uploaded to CosmosDB: {predicted_label}")
                 last_upload_time = time.time()
             except Exception as e:

@@ -1,14 +1,14 @@
 import os, cv2, time, requests
 
 # ─── 環境參數 ───
-SERVER   = os.getenv("SERVER_URL",  "http://127.0.0.1:8080")
+SERVER   = os.getenv("SERVER_URL",  "http://20.72.132.228:8080/")
 TOKEN    = os.getenv("INGEST_TOKEN", "changeme")
 CAM_ID   = int(os.getenv("CAM_ID", 0))        # 通常第一隻鏡頭就是 0
-INTERVAL = float(os.getenv("INTERVAL", 0.04))  # 25 fps
+INTERVAL = float(os.getenv("INTERVAL", 0.04))  # ≒25 fps
 
 # ─── 攝像頭嘗試用 DirectShow (CAP_DSHOW) ───
-# 可改成 CAP_MSMF, CAP_DSHOW, CAP_VFW 等
-cap = cv2.VideoCapture(CAM_ID, cv2.CAP_DSHOW)
+# 如果你的 Python 版本有支援，也可改成 CAP_MSMF, CAP_DSHOW, CAP_VFW 等
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 if not cap.isOpened():
     raise RuntimeError(f"無法開啟攝像頭 (index={CAM_ID})，請確認：\n"
                        "  1. 沒有其他程式在用相機\n"
@@ -28,7 +28,7 @@ while True:
         time.sleep(0.1)
         continue
 
-    # 80% JPEG 品質
+    # 80% JPEG 品質，大約 30–40 kB 左右
     _, buf = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
 
     try:

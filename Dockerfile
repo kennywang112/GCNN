@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN python LoadModel.py
 
 ENV PORT=8080
-ENV INGEST_TOKEN=changeme
+ENV INGEST_TOKEN=changeme  
 
 EXPOSE 8080
 

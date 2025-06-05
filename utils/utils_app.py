@@ -1,3 +1,4 @@
+import os
 import cv2
 import torch
 import numpy as np
@@ -76,8 +77,9 @@ def visualize_adjacency_matrix(image, adjacency_matrix, face_landmarks, w, h):
     
     return matrix_vis
 
-
 def upload_emotion_log_to_cosmos(df, endpoint, key, database_name, container_name):
+
+
 
     client = CosmosClient(endpoint, key)
 
